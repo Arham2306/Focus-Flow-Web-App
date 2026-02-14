@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { DragDropContext, DropResult } from '@hello-pangea/dnd';
 import Sidebar from './components/Sidebar';
 import Column from './components/Column';
@@ -55,6 +56,9 @@ const App: React.FC = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnTitle, setNewColumnTitle] = useState('');
+
+  // Ref to focus the bottom task input
+  const addTaskInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const date = new Date();
@@ -196,6 +200,10 @@ const App: React.FC = () => {
     setColumns(columns.map(col => col.id === colId ? { ...col, sortBy: sortOption } : col));
   };
 
+  const handleFocusAddTask = () => {
+    addTaskInputRef.current?.focus();
+  };
+
   // Central Filtering Logic based on activeNav and Search
   const filteredTasksByView = useMemo(() => {
     let result = [...tasks];
@@ -210,8 +218,7 @@ const App: React.FC = () => {
     } else if (activeNav === 'tasks') {
         // "Tasks" tab usually shows everything
     } else if (activeNav === 'my-day') {
-        // In some implementations, "My Day" only shows Today's tasks. 
-        // Here we keep it as the default dashboard view.
+        // Dashboard view
     }
 
     // 2. Filter by Search Query
@@ -262,7 +269,7 @@ const App: React.FC = () => {
                     <button onClick={() => setViewMode('table')} className={`p-1 rounded-md transition-all ${viewMode === 'table' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary' : 'text-slate-400 dark:text-slate-500'}`}><span className="material-symbols-outlined !text-[20px]">table_rows</span></button>
                     <button onClick={() => setViewMode('adventure')} className={`p-1 rounded-md transition-all ${viewMode === 'adventure' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary' : 'text-slate-400 dark:text-slate-500'}`}><span className="material-symbols-outlined !text-[20px]">map</span></button>
                 </div>
-                <button onClick={() => document.querySelector('input')?.focus()} className="w-8 h-8 flex items-center justify-center rounded-full bg-accent text-slate-900 shadow-sm"><span className="material-symbols-outlined !text-[20px]">add</span></button>
+                <button onClick={handleFocusAddTask} className="w-8 h-8 flex items-center justify-center rounded-full bg-accent text-slate-900 shadow-sm"><span className="material-symbols-outlined !text-[20px]">add</span></button>
              </div>
         </div>
         <header className="px-4 lg:px-8 pt-6 lg:pt-10 pb-4 lg:pb-6 flex flex-col lg:flex-row lg:justify-between lg:items-end gap-4 shrink-0">
@@ -281,7 +288,7 @@ const App: React.FC = () => {
                     <button onClick={() => setViewMode('table')} className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${viewMode === 'table' ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}><span className="material-symbols-outlined !text-[18px]">table_rows</span> List</button>
                     <button onClick={() => setViewMode('adventure')} className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${viewMode === 'adventure' ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}><span className="material-symbols-outlined !text-[18px]">map</span> Map</button>
                  </div>
-                <button onClick={() => document.querySelector('input')?.focus()} className="bg-accent text-slate-900 px-4 py-2 rounded-xl font-bold text-sm shadow-sm hover:shadow-md transition-all flex items-center gap-2 whitespace-nowrap"><span className="material-symbols-outlined !text-lg">add</span> Add Task</button>
+                <button onClick={handleFocusAddTask} className="bg-accent text-slate-900 px-4 py-2 rounded-xl font-bold text-sm shadow-sm hover:shadow-md transition-all flex items-center gap-2 whitespace-nowrap"><span className="material-symbols-outlined !text-lg">add</span> Add Task</button>
             </div>
           </div>
         </header>
@@ -321,7 +328,7 @@ const App: React.FC = () => {
               </div>
           </DragDropContext>
         )}
-        <AddTaskBar onAddTask={handleAddTask} />
+        <AddTaskBar ref={addTaskInputRef} onAddTask={handleAddTask} />
         <PomodoroTimer />
         {selectedTask && <TaskModal task={selectedTask} columns={columns} onClose={() => setSelectedTask(null)} onUpdate={handleUpdateTask} onDelete={handleDeleteTask} />}
       </main>

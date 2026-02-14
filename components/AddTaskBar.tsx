@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+
+import React, { useState, useRef, useEffect, forwardRef } from 'react';
 import { Task, Subtask } from '../types';
 import { GoogleGenAI, Type } from "@google/genai";
 
@@ -6,7 +7,7 @@ interface AddTaskBarProps {
   onAddTask: (title: string | Partial<Task>, dueDate?: string, hasNotification?: boolean) => void;
 }
 
-const AddTaskBar: React.FC<AddTaskBarProps> = ({ onAddTask }) => {
+const AddTaskBar = forwardRef<HTMLInputElement, AddTaskBarProps>(({ onAddTask }, ref) => {
   const [inputValue, setInputValue] = useState('');
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -234,7 +235,7 @@ const AddTaskBar: React.FC<AddTaskBarProps> = ({ onAddTask }) => {
                 onClick={(e) => { e.stopPropagation(); setIsCustomDateOpen(false); }}
                 className="w-full mt-2 py-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-primary font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors flex items-center justify-center gap-1"
              >
-                <span className="material-symbols-outlined !text-sm">arrow_back</span>
+                <span className="material-symbols-outlined !sm">arrow_back</span>
                 Back to presets
              </button>
         </div>
@@ -251,6 +252,7 @@ const AddTaskBar: React.FC<AddTaskBarProps> = ({ onAddTask }) => {
             </span>
           </div>
           <input 
+            ref={ref}
             type="text"
             className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-xl py-3 pl-10 lg:pl-12 pr-32 lg:pr-36 text-sm focus:ring-2 focus:ring-primary/20 placeholder-slate-400 dark:placeholder-slate-500 text-slate-900 dark:text-white transition-all font-medium"
             placeholder="Add a task..."
@@ -353,6 +355,6 @@ const AddTaskBar: React.FC<AddTaskBarProps> = ({ onAddTask }) => {
       </div>
     </div>
   );
-};
+});
 
 export default AddTaskBar;
