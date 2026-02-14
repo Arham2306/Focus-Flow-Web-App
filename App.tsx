@@ -71,6 +71,8 @@ const App: React.FC = () => {
     }
   }, [darkMode]);
 
+  const toggleDarkMode = () => setDarkMode(!darkMode);
+
   const onDragEnd = (result: DropResult) => {
     const { source, destination } = result;
     if (!destination) return;
@@ -178,14 +180,20 @@ const App: React.FC = () => {
   };
 
   if (!isLoggedIn) {
-    return <LandingPage onLogin={() => setIsLoggedIn(true)} />;
+    return (
+      <LandingPage 
+        onLogin={() => setIsLoggedIn(true)} 
+        darkMode={darkMode} 
+        onToggleDarkMode={toggleDarkMode} 
+      />
+    );
   }
 
   return (
     <div className="flex h-screen bg-background-light dark:bg-slate-950 overflow-hidden transition-colors duration-200">
       <Sidebar 
         darkMode={darkMode} 
-        toggleDarkMode={() => setDarkMode(!darkMode)} 
+        toggleDarkMode={toggleDarkMode} 
         activeNav={activeNav} 
         setActiveNav={setActiveNav}
         isOpen={sidebarOpen}
