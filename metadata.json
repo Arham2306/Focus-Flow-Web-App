@@ -1,0 +1,5 @@
+{
+  "name": "FocusFlow",
+  "description": "A minimalist task manager with a Kanban-style board, featuring distinct columns for daily focus, upcoming tasks, and completed items.",
+  "requestFramePermissions": []
+}
