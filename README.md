@@ -6,12 +6,12 @@ FocusFlow is a minimalist, intelligent task manager designed to help you organiz
 
 | **Intelligent Kanban Board** | **Adventure Mode (Map)** |
 |:---:|:---:|
-| ![Kanban View](./screenshots/Screenshot 2026-02-15 043857.png) | ![Adventure Mode](./screenshots/adventure view.png) |
+| ![Kanban View](./screenshots/Screenshot-2026-02-15 043857.png) | ![Adventure Mode](./screenshots/adventure-view.png) |
 | Organise tasks into Today, Upcoming, and Completed with smooth drag-and-drop. | Turn your daily goals into a quest. Navigate levels to reach the trophy! |
 
 | **AI-Powered Task Parsing** | **Pomodoro Focus Timer** |
 |:---:|:---:|
-| ![AI Magic](./screenshots/add task.png) | ![Pomodoro Timer](./screenshots/focus timer.png) |
+| ![AI Magic](./screenshots/add-task.png) | ![Pomodoro Timer](./screenshots/focus-timer.png) |
 | Natural language processing extracts dates, priority, and subtasks instantly. | Stay in the zone with adjustable focus sessions and break reminders. |
 
 ## 🌟 Key Features
