@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Droppable } from '@hello-pangea/dnd';
-import { Task, SortOption, TaskPriority } from '../types';
+import { Task, SortOption, TaskPriority, ColumnId } from '../types';
 import TaskCard from './TaskCard';
 
 interface ColumnProps {
@@ -13,6 +13,7 @@ interface ColumnProps {
   onToggleImportant: (id: string) => void;
   onTaskClick: (task: Task) => void;
   onSortChange?: (option: SortOption) => void;
+  onDelete?: () => void;
   viewMode: 'board' | 'table';
 }
 
@@ -26,6 +27,7 @@ const Column: React.FC<ColumnProps> = ({
   onToggleImportant,
   onTaskClick,
   onSortChange,
+  onDelete,
   viewMode
 }) => {
   const [showSortMenu, setShowSortMenu] = useState(false);
@@ -67,20 +69,42 @@ const Column: React.FC<ColumnProps> = ({
     }
   }, [tasks, sortBy]);
 
+  const isSystemColumn = id === ColumnId.TODAY || id === ColumnId.UPCOMING || id === ColumnId.COMPLETED;
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete?.();
+  };
+
   return (
     <div className={viewMode === 'board' ? "board-column flex flex-col h-full bg-column-bg/50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-4 shrink-0 transition-colors duration-200 snap-center" : "w-full flex flex-col bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700/50 overflow-hidden shrink-0 transition-colors duration-200"}>
       <div className={viewMode === 'board' ? "flex items-center justify-between mb-4 px-2" : "p-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between"}>
-        <h3 className="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${colorClass}`}></span>
-          {title}
+        <h3 className="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2 truncate pr-2">
+          <span className={`w-2 h-2 rounded-full shrink-0 ${colorClass}`}></span>
+          <span className="truncate">{title}</span>
         </h3>
-        <div className="flex items-center gap-2 relative" ref={menuRef}>
-            <span className="text-xs font-bold bg-white dark:bg-slate-800 px-2 py-1 rounded-lg text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700">
+        <div className="flex items-center gap-1 sm:gap-2 relative shrink-0" ref={menuRef}>
+            <span className="text-[10px] sm:text-xs font-bold bg-white dark:bg-slate-800 px-2 py-1 rounded-lg text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700">
               {tasks.length}
             </span>
-            <button onClick={() => setShowSortMenu(!showSortMenu)} className={`flex items-center justify-center p-1 rounded-lg transition-all ${showSortMenu ? 'bg-primary text-white' : 'text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-primary shadow-sm'}`}>
-                <span className="material-symbols-outlined !text-[16px]">swap_vert</span>
+            <button 
+              type="button"
+              onClick={() => setShowSortMenu(!showSortMenu)} 
+              className={`flex items-center justify-center p-1 rounded-lg transition-all ${showSortMenu ? 'bg-primary text-white' : 'text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-primary shadow-sm'}`}
+              title="Sort Column"
+            >
+                <span className="material-symbols-outlined !text-[18px]">swap_vert</span>
             </button>
+            {!isSystemColumn && onDelete && (
+              <button 
+                type="button"
+                onClick={handleDeleteClick} 
+                className="flex items-center justify-center p-1 rounded-lg text-slate-400 hover:text-red-500 hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm border border-transparent"
+                title="Delete Column"
+              >
+                <span className="material-symbols-outlined !text-[18px]">delete</span>
+              </button>
+            )}
             {showSortMenu && (
                 <div className="absolute top-full right-0 mt-2 w-40 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 p-1.5 z-50 animate-in zoom-in-95 duration-150 origin-top-right backdrop-blur-md">
                     <p className="px-2 py-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 dark:border-slate-700 mb-1">Sort by</p>
@@ -90,7 +114,7 @@ const Column: React.FC<ColumnProps> = ({
                         { label: 'Title', icon: 'abc', option: SortOption.TITLE },
                         { label: 'Creation', icon: 'schedule', option: SortOption.CREATION },
                     ].map((item) => (
-                        <button key={item.option} onClick={() => { onSortChange?.(item.option); setShowSortMenu(false); }} className={`w-full flex items-center gap-3 px-2 py-2 rounded-lg text-xs font-bold transition-all ${sortBy === item.option ? 'bg-primary/10 text-primary' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900'}`}>
+                        <button key={item.option} type="button" onClick={() => { onSortChange?.(item.option); setShowSortMenu(false); }} className={`w-full flex items-center gap-3 px-2 py-2 rounded-lg text-xs font-bold transition-all ${sortBy === item.option ? 'bg-primary/10 text-primary' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900'}`}>
                             <span className="material-symbols-outlined !text-[16px]">{item.icon}</span>{item.label}
                         </button>
                     ))}

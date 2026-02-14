@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import { Task, ColumnData, TaskStatus, Subtask, TaskPriority, ColumnId } from '../types';
@@ -272,7 +271,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, columns, onClose, onUpdate,
                             {subtasks.map(st => (
                                 <div key={st.id} className="flex items-center gap-2 p-2.5 group hover:bg-white dark:hover:bg-slate-800 transition-colors">
                                     <input type="checkbox" checked={st.isCompleted} onChange={() => toggleSubtask(st.id)} className="h-3.5 w-3.5 rounded-full border-slate-300 text-primary focus:ring-primary cursor-pointer" />
-                                    <span className={`flex-1 text-xs font-medium ${st.isCompleted ? 'text-slate-400 dark:text-slate-600 line-through' : 'text-slate-700 dark:text-slate-200'}`}>{st.title}</span>
+                                    <span className={`flex-1 text-xs font-medium ${st.isCompleted ? 'text-slate-400 dark:text-slate-500 line-through' : 'text-slate-700 dark:text-slate-200'}`}>{st.title}</span>
                                     <button onClick={() => deleteSubtask(st.id)} className="text-slate-300 dark:text-slate-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-1"><span className="material-symbols-outlined !text-[16px]">close</span></button>
                                 </div>
                             ))}
@@ -291,22 +290,22 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, columns, onClose, onUpdate,
         <div className="bg-slate-50 dark:bg-slate-900 px-4 sm:px-6 py-4 flex items-center justify-between border-t border-slate-100 dark:border-slate-700 shrink-0 gap-2">
             <button 
                 onClick={handleDelete}
-                className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 sm:px-3 sm:py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 sm:gap-2 group"
+                className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 sm:px-3 sm:py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 sm:gap-2 group shrink-0"
                 title="Delete Task"
             >
                 <span className="material-symbols-outlined !text-[18px]">delete</span>
                 <span className="hidden sm:inline">Delete</span>
             </button>
-            <div className="flex gap-1.5 sm:gap-2 items-center">
+            <div className="flex gap-2 items-center flex-1 justify-end flex-nowrap min-w-0">
                 <button 
                     onClick={onClose}
-                    className="px-3 sm:px-4 py-2 text-slate-600 dark:text-slate-400 font-bold text-[11px] sm:text-sm hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors"
+                    className="px-3 sm:px-4 py-2 text-slate-600 dark:text-slate-400 font-bold text-xs sm:text-sm hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors shrink-0"
                 >
                     Cancel
                 </button>
                 <button 
                     onClick={handleSave}
-                    className="px-4 sm:px-6 py-2 bg-primary text-white font-bold text-[11px] sm:text-sm rounded-xl shadow-sm hover:shadow-md hover:bg-primary/90 transition-all whitespace-nowrap"
+                    className="px-4 sm:px-6 py-2 bg-primary text-white font-bold text-xs sm:text-sm rounded-xl shadow-sm hover:shadow-md hover:bg-primary/90 transition-all whitespace-nowrap flex-shrink-0"
                 >
                     Save Changes
                 </button>

@@ -68,11 +68,19 @@ const App: React.FC = () => {
   const [newColumnTitle, setNewColumnTitle] = useState('');
 
   useEffect(() => {
-    localStorage.setItem('focusflow-tasks', JSON.stringify(tasks));
+    try {
+      localStorage.setItem('focusflow-tasks', JSON.stringify(tasks));
+    } catch (e) {
+      console.error("Failed to save tasks", e);
+    }
   }, [tasks]);
 
   useEffect(() => {
-    localStorage.setItem('focusflow-columns', JSON.stringify(columns));
+    try {
+      localStorage.setItem('focusflow-columns', JSON.stringify(columns));
+    } catch (e) {
+      console.error("Failed to save columns", e);
+    }
   }, [columns]);
 
   useEffect(() => {
@@ -119,7 +127,7 @@ const App: React.FC = () => {
 
   const addTask = (data: string | Partial<Task>, dueDate?: string, hasNotification?: boolean) => {
     const newTask: Task = typeof data === 'string' ? {
-      id: Date.now().toString(),
+      id: `task-${Date.now()}`,
       title: data,
       status: TaskStatus.TODO,
       isImportant: false,
@@ -128,7 +136,7 @@ const App: React.FC = () => {
       hasNotification: hasNotification,
       priority: TaskPriority.MEDIUM
     } : {
-      id: Date.now().toString(),
+      id: `task-${Date.now()}`,
       title: data.title || 'Untitled Task',
       status: TaskStatus.TODO,
       isImportant: data.isImportant || false,
@@ -141,7 +149,7 @@ const App: React.FC = () => {
       hasNotification: data.hasNotification
     };
 
-    setTasks([newTask, ...tasks]);
+    setTasks(prev => [newTask, ...prev]);
   };
 
   const addColumn = () => {
@@ -149,14 +157,30 @@ const App: React.FC = () => {
         setIsAddingColumn(false);
         return;
     }
-    const newCol: ColumnData = { id: `custom-${Date.now()}`, title: newColumnTitle.trim(), colorClass: 'bg-slate-400', sortBy: SortOption.CREATION };
-    setColumns([...columns, newCol]);
+    const newCol: ColumnData = { 
+      id: `custom-${Date.now()}`, 
+      title: newColumnTitle.trim(), 
+      colorClass: 'bg-slate-400', 
+      sortBy: SortOption.CREATION 
+    };
+    setColumns(prev => [...prev, newCol]);
     setNewColumnTitle('');
     setIsAddingColumn(false);
   };
 
-  const updateTask = (updatedTask: Task) => setTasks(tasks.map(t => t.id === updatedTask.id ? updatedTask : t));
-  const deleteTask = (taskId: string) => { setTasks(tasks.filter(t => t.id !== taskId)); setSelectedTask(null); };
+  const deleteColumn = (id: string) => {
+    // Prevent deletion of system columns
+    if (id === ColumnId.TODAY || id === ColumnId.UPCOMING || id === ColumnId.COMPLETED) return;
+    
+    const confirmMessage = "Are you sure you want to delete this column? All tasks inside will be permanently removed.";
+    if (window.confirm(confirmMessage)) {
+      setColumns(prev => prev.filter(c => c.id !== id));
+      setTasks(prev => prev.filter(t => t.columnId !== id));
+    }
+  };
+
+  const updateTask = (updatedTask: Task) => setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
+  const deleteTask = (taskId: string) => { setTasks(prev => prev.filter(t => t.id !== taskId)); setSelectedTask(null); };
 
   const toggleStatus = (id: string) => {
     const task = tasks.find(t => t.id === id);
@@ -183,7 +207,7 @@ const App: React.FC = () => {
   }, [tasks, activeNav]);
 
   const handleSortChange = (colId: string, option: SortOption) => {
-    setColumns(columns.map(c => c.id === colId ? { ...c, sortBy: option } : c));
+    setColumns(prev => prev.map(c => c.id === colId ? { ...c, sortBy: option } : c));
   };
 
   if (!isLoggedIn) return <LandingPage onLogin={() => setIsLoggedIn(true)} darkMode={darkMode} onToggleDarkMode={toggleDarkMode} />;
@@ -240,6 +264,7 @@ const App: React.FC = () => {
                     tasks={filteredTasks.filter(t => t.columnId === col.id)}
                     onToggleStatus={toggleStatus} onToggleImportant={toggleImportant}
                     onTaskClick={setSelectedTask} sortBy={col.sortBy} onSortChange={(opt) => handleSortChange(col.id, opt)}
+                    onDelete={() => deleteColumn(col.id)}
                     viewMode={viewMode}
                   />
                 ))}
