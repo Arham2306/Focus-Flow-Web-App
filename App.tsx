@@ -33,11 +33,23 @@ const App: React.FC = () => {
     return INITIAL_TASKS;
   });
 
-  const [columns, setColumns] = useState<ColumnData[]>([
-    { id: ColumnId.TODAY, title: 'Today', colorClass: 'bg-primary', sortBy: SortOption.CREATION },
-    { id: ColumnId.UPCOMING, title: 'Upcoming', colorClass: 'bg-accent', sortBy: SortOption.CREATION },
-    { id: ColumnId.COMPLETED, title: 'Completed', colorClass: 'bg-green-400', sortBy: SortOption.CREATION }
-  ]);
+  const [columns, setColumns] = useState<ColumnData[]>(() => {
+    if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('focusflow-columns');
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                console.error("Failed to parse columns from storage", e);
+            }
+        }
+    }
+    return [
+        { id: ColumnId.TODAY, title: 'Today', colorClass: 'bg-primary', sortBy: SortOption.CREATION },
+        { id: ColumnId.UPCOMING, title: 'Upcoming', colorClass: 'bg-accent', sortBy: SortOption.CREATION },
+        { id: ColumnId.COMPLETED, title: 'Completed', colorClass: 'bg-green-400', sortBy: SortOption.CREATION }
+    ];
+  });
 
   const [darkMode, setDarkMode] = useState(() => {
       if (typeof window !== 'undefined') {
@@ -52,10 +64,16 @@ const App: React.FC = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<'board' | 'table'>('board');
   const [adventureMode, setAdventureMode] = useState(false);
+  const [isAddingColumn, setIsAddingColumn] = useState(false);
+  const [newColumnTitle, setNewColumnTitle] = useState('');
 
   useEffect(() => {
     localStorage.setItem('focusflow-tasks', JSON.stringify(tasks));
   }, [tasks]);
+
+  useEffect(() => {
+    localStorage.setItem('focusflow-columns', JSON.stringify(columns));
+  }, [columns]);
 
   useEffect(() => {
     localStorage.setItem('focusflow-auth', String(isLoggedIn));
@@ -92,8 +110,6 @@ const App: React.FC = () => {
     }
     removed.columnId = destination.droppableId;
 
-    // We don't necessarily support re-ordering indices within the full array for simplicity,
-    // but we can re-insert it so it feels right. 
     newTasks.push(removed);
     setTasks(newTasks);
 
@@ -132,6 +148,29 @@ const App: React.FC = () => {
     };
 
     setTasks([newTask, ...tasks]);
+  };
+
+  const addColumn = () => {
+    if (!newColumnTitle.trim()) {
+        setIsAddingColumn(false);
+        return;
+    }
+    const newCol: ColumnData = {
+        id: `custom-${Date.now()}`,
+        title: newColumnTitle.trim(),
+        colorClass: 'bg-slate-400',
+        sortBy: SortOption.CREATION
+    };
+    setColumns([...columns, newCol]);
+    setNewColumnTitle('');
+    setIsAddingColumn(false);
+  };
+
+  const deleteColumn = (id: string) => {
+      // Don't allow deleting system columns for safety in this basic version
+      if (id === ColumnId.TODAY || id === ColumnId.UPCOMING || id === ColumnId.COMPLETED) return;
+      setColumns(columns.filter(c => c.id !== id));
+      setTasks(tasks.filter(t => t.columnId !== id));
   };
 
   const updateTask = (updatedTask: Task) => {
@@ -272,6 +311,37 @@ const App: React.FC = () => {
                     viewMode={viewMode}
                   />
                 ))}
+
+                {/* Add Column Button (Only in Board View) */}
+                {viewMode === 'board' && (
+                  <div className="board-column shrink-0 flex flex-col h-full">
+                    {!isAddingColumn ? (
+                        <button 
+                            onClick={() => setIsAddingColumn(true)}
+                            className="w-full h-32 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col items-center justify-center text-slate-400 hover:text-primary hover:border-primary/50 hover:bg-white/50 dark:hover:bg-slate-900/50 transition-all group"
+                        >
+                            <span className="material-symbols-outlined !text-3xl mb-2 group-hover:scale-110 transition-transform">add_circle</span>
+                            <span className="text-xs font-black uppercase tracking-widest">Add Column</span>
+                        </button>
+                    ) : (
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-xl animate-in zoom-in-95 duration-200">
+                             <input 
+                                autoFocus
+                                value={newColumnTitle}
+                                onChange={(e) => setNewColumnTitle(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && addColumn()}
+                                onBlur={addColumn}
+                                className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl py-3 px-4 text-sm font-bold placeholder-slate-400 focus:ring-2 focus:ring-primary/20 mb-3"
+                                placeholder="Column Title..."
+                             />
+                             <div className="flex gap-2">
+                                <button onClick={addColumn} className="flex-1 py-2 bg-primary text-white rounded-xl text-xs font-bold">Add</button>
+                                <button onClick={() => setIsAddingColumn(false)} className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-xl text-xs font-bold">Cancel</button>
+                             </div>
+                        </div>
+                    )}
+                  </div>
+                )}
               </div>
             </DragDropContext>
           )}
