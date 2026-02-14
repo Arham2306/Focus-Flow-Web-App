@@ -7,6 +7,7 @@ import AddTaskBar from './components/AddTaskBar';
 import TaskModal from './components/TaskModal';
 import PomodoroTimer from './components/PomodoroTimer';
 import AdventureView from './components/AdventureView';
+import LandingPage from './components/LandingPage';
 import { INITIAL_TASKS, NAV_ITEMS } from './constants';
 import { Task, ColumnId, TaskStatus, ColumnData, SortOption } from './types';
 import confetti from 'canvas-confetti';
@@ -21,6 +22,13 @@ const COLUMN_COLORS = [
 ];
 
 const App: React.FC = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    if (typeof window !== 'undefined') {
+        return localStorage.getItem('focusflow-auth') === 'true';
+    }
+    return false;
+  });
+
   const [tasks, setTasks] = useState<Task[]>(() => {
     if (typeof window !== 'undefined') {
         const saved = localStorage.getItem('focusflow-tasks');
@@ -70,6 +78,10 @@ const App: React.FC = () => {
     localStorage.setItem('focusflow-tasks', JSON.stringify(tasks));
   }, [tasks]);
 
+  useEffect(() => {
+    localStorage.setItem('focusflow-auth', String(isLoggedIn));
+  }, [isLoggedIn]);
+
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
     if (!darkMode) {
@@ -77,6 +89,14 @@ const App: React.FC = () => {
     } else {
       document.documentElement.classList.remove('dark');
     }
+  };
+
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
   };
 
   const triggerConfetti = () => {
@@ -243,6 +263,10 @@ const App: React.FC = () => {
     return item ? item.label : 'My Day';
   };
 
+  if (!isLoggedIn) {
+    return <LandingPage onLogin={handleLogin} />;
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-background-light dark:bg-slate-950 transition-colors duration-200">
       {isSidebarOpen && (
@@ -256,6 +280,7 @@ const App: React.FC = () => {
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         tasks={tasks}
+        onLogout={handleLogout}
       />
       <main className="flex-1 flex flex-col overflow-hidden relative">
         <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
