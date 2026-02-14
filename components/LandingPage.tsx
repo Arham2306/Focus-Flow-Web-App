@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import LoginPage from './LoginPage';
 import SignupPage from './SignupPage';
@@ -269,6 +268,56 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
         </div>
       </section>
 
+      {/* WHY FOCUSFLOW - New Section */}
+      <section className="py-32 px-6 bg-white dark:bg-slate-950">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-20 items-center">
+            <div>
+              <h2 className="text-4xl lg:text-6xl font-black text-slate-900 dark:text-white tracking-tight mb-8">Built for the <br /> <span className="text-primary">flow state.</span></h2>
+              <div className="space-y-12">
+                <div className="flex items-start gap-6">
+                  <div className="w-16 h-16 shrink-0 bg-slate-100 dark:bg-slate-800 rounded-3xl flex items-center justify-center text-primary shadow-inner">
+                    <span className="material-symbols-outlined !text-3xl">bolt</span>
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-black text-slate-900 dark:text-white mb-2">Instant Response</h4>
+                    <p className="text-slate-500 dark:text-slate-400 leading-relaxed">No loading spinners. No waiting. FocusFlow is built on local-first architecture for sub-millisecond interaction speeds.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-6">
+                  <div className="w-16 h-16 shrink-0 bg-slate-100 dark:bg-slate-800 rounded-3xl flex items-center justify-center text-accent shadow-inner">
+                    <span className="material-symbols-outlined !text-3xl">verified_user</span>
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-black text-slate-900 dark:text-white mb-2">Privacy Centric</h4>
+                    <p className="text-slate-500 dark:text-slate-400 leading-relaxed">Your tasks are your business. We store data locally by default, ensuring your sensitive information stays on your device.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full"></div>
+              <div className="relative bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-[3rem] shadow-2xl">
+                <div className="space-y-4">
+                  <div className="h-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center px-4 gap-3 shadow-sm">
+                    <span className="w-3 h-3 rounded-full bg-green-400"></span>
+                    <div className="h-2 w-32 bg-slate-100 dark:bg-slate-700 rounded-full"></div>
+                  </div>
+                  <div className="h-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center px-4 gap-3 shadow-sm translate-x-4">
+                    <span className="w-3 h-3 rounded-full bg-primary"></span>
+                    <div className="h-2 w-48 bg-slate-100 dark:bg-slate-700 rounded-full"></div>
+                  </div>
+                  <div className="h-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center px-4 gap-3 shadow-sm -translate-x-2">
+                    <span className="w-3 h-3 rounded-full bg-accent"></span>
+                    <div className="h-2 w-40 bg-slate-100 dark:bg-slate-700 rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* How it Works - Timeline */}
       <section id="how-it-works" className="py-32 px-6">
         <div className="max-w-7xl mx-auto">
@@ -278,7 +327,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
           </div>
 
           <div className="grid lg:grid-cols-4 gap-12 relative">
-            {/* Timeline Line (Desktop Only) */}
             <div className="absolute top-1/2 left-0 right-0 h-px bg-slate-100 dark:bg-slate-800 hidden lg:block -z-10"></div>
             
             {[
