@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 
 const PomodoroTimer = () => {
@@ -11,7 +10,6 @@ const PomodoroTimer = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
-    // Fix: Using ReturnType<typeof setInterval> instead of NodeJS.Timeout for portability
     let interval: ReturnType<typeof setInterval> | undefined;
     if (isActive && timeLeft > 0) {
       interval = setInterval(() => {
@@ -66,7 +64,7 @@ const PomodoroTimer = () => {
     return (
       <button 
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-slate-900 dark:bg-primary text-white rounded-full shadow-xl flex items-center justify-center hover:scale-110 transition-transform group border-2 border-white/10"
+        className="fixed bottom-28 sm:bottom-10 right-4 sm:right-10 z-[45] w-14 h-14 bg-slate-900 dark:bg-primary text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform group border-2 border-white/20 active:scale-95"
         title="Open Focus Timer"
       >
         <span className="material-symbols-outlined !text-2xl group-hover:rotate-12 transition-transform">timer</span>
@@ -81,56 +79,56 @@ const PomodoroTimer = () => {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-40 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 w-72 border border-slate-200 dark:border-slate-700 animate-in slide-in-from-bottom-10 fade-in duration-300">
+    <div className="fixed bottom-28 sm:bottom-10 right-4 sm:right-10 z-[45] bg-white dark:bg-slate-800 rounded-3xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] p-6 w-[calc(100vw-2rem)] sm:w-80 border border-slate-200 dark:border-slate-700 animate-in slide-in-from-bottom-10 fade-in duration-300">
       <div className="flex items-center justify-between mb-6">
         <h3 className="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">timer</span>
             Focus Timer
         </h3>
-        <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+        <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
             <span className="material-symbols-outlined">close</span>
         </button>
       </div>
 
-      <div className="flex bg-slate-100 dark:bg-slate-700/50 p-1 rounded-xl mb-6">
+      <div className="flex bg-slate-100 dark:bg-slate-700/50 p-1 rounded-2xl mb-6">
         <button 
             onClick={() => switchMode('focus')}
-            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${mode === 'focus' ? 'bg-white dark:bg-slate-600 shadow text-primary' : 'text-slate-500 dark:text-slate-400'}`}
+            className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${mode === 'focus' ? 'bg-white dark:bg-slate-600 shadow-sm text-primary' : 'text-slate-500 dark:text-slate-400'}`}
         >
             Focus
         </button>
         <button 
              onClick={() => switchMode('break')}
-             className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${mode === 'break' ? 'bg-white dark:bg-slate-600 shadow text-blue-500' : 'text-slate-500 dark:text-slate-400'}`}
+             className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${mode === 'break' ? 'bg-white dark:bg-slate-600 shadow-sm text-blue-500' : 'text-slate-500 dark:text-slate-400'}`}
         >
             Break
         </button>
       </div>
 
-      <div className="text-center mb-6">
-        <div className="text-5xl font-black text-slate-800 dark:text-white font-mono tracking-wider tabular-nums">
+      <div className="text-center mb-8">
+        <div className="text-6xl font-black text-slate-800 dark:text-white font-mono tracking-tighter tabular-nums">
             {formatTime(timeLeft)}
         </div>
-        <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-bold uppercase tracking-widest">
-            {isActive ? 'Running' : 'Paused'}
+        <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-3 font-black uppercase tracking-[0.2em]">
+            {isActive ? 'Deep Work Session' : 'Paused'}
         </p>
       </div>
 
       <div className="flex gap-3">
         <button 
             onClick={toggleTimer}
-            className={`flex-1 py-3 rounded-xl font-bold text-white shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2
-                ${isActive ? 'bg-orange-500 hover:bg-orange-600' : 'bg-primary hover:bg-primary/90'}
+            className={`flex-1 py-4 rounded-2xl font-black text-white shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2
+                ${isActive ? 'bg-orange-500 hover:bg-orange-600 shadow-orange-500/20' : 'bg-primary hover:bg-primary/90 shadow-primary/20'}
             `}
         >
-            <span className="material-symbols-outlined !text-lg">{isActive ? 'pause' : 'play_arrow'}</span>
+            <span className="material-symbols-outlined !text-xl">{isActive ? 'pause' : 'play_arrow'}</span>
             {isActive ? 'Pause' : 'Start'}
         </button>
         <button 
             onClick={resetTimer}
-            className="w-12 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+            className="w-14 flex items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
         >
-            <span className="material-symbols-outlined !text-xl">restart_alt</span>
+            <span className="material-symbols-outlined !text-2xl">restart_alt</span>
         </button>
       </div>
     </div>

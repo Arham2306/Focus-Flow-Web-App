@@ -217,6 +217,7 @@ const App: React.FC = () => {
       <Sidebar 
         darkMode={darkMode} toggleDarkMode={toggleDarkMode} activeNav={activeNav} setActiveNav={setActiveNav}
         isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} tasks={tasks} onLogout={() => setIsLoggedIn(false)}
+        onAddTask={addTask}
       />
 
       <main className="flex-1 flex flex-col min-w-0 h-full relative">
