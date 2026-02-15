@@ -28,30 +28,25 @@ const AddTaskBar = forwardRef<HTMLInputElement, AddTaskBarProps>(({ onAddTask },
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (!showCalendar) {
-      const timer = setTimeout(() => {
-        setIsCustomDateOpen(false);
-        setCalendarViewDate(new Date());
-      }, 200);
-      return () => clearTimeout(timer);
-    }
-  }, [showCalendar]);
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && inputValue.trim()) {
-      let dateStr = undefined;
-      if (selectedDate) {
-        if (isToday(selectedDate)) dateStr = 'Due today';
-        else if (isTomorrow(selectedDate)) dateStr = 'Due tomorrow';
-        else dateStr = `Due ${selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-      }
-      onAddTask(inputValue.trim(), dateStr, hasNotification);
-      setInputValue('');
-      setSelectedDate(null);
-      setShowCalendar(false);
-      setHasNotification(false);
+      submitTask();
     }
+  };
+
+  const submitTask = () => {
+    if (!inputValue.trim()) return;
+    let dateStr = undefined;
+    if (selectedDate) {
+      if (isToday(selectedDate)) dateStr = 'Due today';
+      else if (isTomorrow(selectedDate)) dateStr = 'Due tomorrow';
+      else dateStr = `Due ${selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+    }
+    onAddTask(inputValue.trim(), dateStr, hasNotification);
+    setInputValue('');
+    setSelectedDate(null);
+    setShowCalendar(false);
+    setHasNotification(false);
   };
 
   const handleAiTaskCreation = async () => {
@@ -83,7 +78,9 @@ const AddTaskBar = forwardRef<HTMLInputElement, AddTaskBarProps>(({ onAddTask },
         onAddTask({ ...data, subtasks: formattedSubtasks, title: data.title || inputValue });
         setInputValue(''); setSelectedDate(null); setHasNotification(false);
     } catch (e) {
-        console.error(e); onAddTask(inputValue, undefined, hasNotification); setInputValue('');
+        console.error(e); 
+        // Fallback to regular add
+        submitTask();
     } finally { setIsThinking(false); }
   };
 
@@ -119,9 +116,9 @@ const AddTaskBar = forwardRef<HTMLInputElement, AddTaskBarProps>(({ onAddTask },
     return (
         <div className="p-1">
              <div className="flex items-center justify-between mb-2">
-                <button onClick={(e) => { e.stopPropagation(); setCalendarViewDate(new Date(year, month - 1, 1)); }} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full"><span className="material-symbols-outlined !text-sm">chevron_left</span></button>
-                <span className="text-[10px] font-bold">{calendarViewDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
-                <button onClick={(e) => { e.stopPropagation(); setCalendarViewDate(new Date(year, month + 1, 1)); }} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full"><span className="material-symbols-outlined !text-sm">chevron_right</span></button>
+                <button onClick={(e) => { e.stopPropagation(); setCalendarViewDate(new Date(year, month - 1, 1)); }} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-500"><span className="material-symbols-outlined !text-sm">chevron_left</span></button>
+                <span className="text-[10px] font-bold dark:text-slate-300">{calendarViewDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+                <button onClick={(e) => { e.stopPropagation(); setCalendarViewDate(new Date(year, month + 1, 1)); }} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-500"><span className="material-symbols-outlined !text-sm">chevron_right</span></button>
              </div>
              <div className="grid grid-cols-7 gap-0.5 text-center mb-1">{weekDays.map(d => <span key={d} className="text-[8px] text-slate-400 font-bold">{d}</span>)}</div>
              <div className="grid grid-cols-7 gap-0.5">{days}</div>
@@ -131,55 +128,106 @@ const AddTaskBar = forwardRef<HTMLInputElement, AddTaskBarProps>(({ onAddTask },
   };
 
   return (
-    <div className="p-3 sm:p-4 lg:p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0 relative z-20">
-      <div className="max-w-4xl mx-auto">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-2.5 sm:left-4 flex items-center pointer-events-none">
-            <span className="material-symbols-outlined !text-[20px] sm:!text-[24px] text-primary">add_circle</span>
+    <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-6 lg:p-8 flex justify-center pointer-events-none z-[60]">
+      <div className={`
+        relative w-full max-w-2xl bg-white/80 dark:bg-slate-900/90 backdrop-blur-xl rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-slate-200/50 dark:border-slate-800/50 p-2 pointer-events-auto transition-all duration-300
+        ${isThinking ? 'ring-2 ring-purple-500/30' : ''}
+      `}>
+        <div className="relative flex items-center gap-2">
+          {/* Action Icon Left */}
+          <div className="flex items-center justify-center pl-4 pr-1">
+            <div className={`transition-transform duration-300 ${inputValue.trim() ? 'scale-110' : 'scale-100'}`}>
+              <span className={`material-symbols-outlined !text-[24px] ${inputValue.trim() ? 'text-primary' : 'text-slate-300 dark:text-slate-600'}`}>
+                {isThinking ? 'slow_motion_video' : 'add_circle'}
+              </span>
+            </div>
           </div>
+
+          {/* Input Area */}
           <input 
-            ref={ref} type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={handleKeyDown} disabled={isThinking}
-            className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-xl py-2 sm:py-3 pl-9 sm:pl-12 pr-28 sm:pr-36 text-xs sm:text-sm focus:ring-2 focus:ring-primary/20 placeholder-slate-400 dark:text-white transition-all font-medium"
-            placeholder="Add a task..."
+            ref={ref} 
+            type="text" 
+            value={inputValue} 
+            onChange={(e) => setInputValue(e.target.value)} 
+            onKeyDown={handleKeyDown} 
+            disabled={isThinking}
+            className="flex-1 bg-transparent border-none py-4 text-sm sm:text-base focus:ring-0 placeholder-slate-400 dark:text-white font-medium transition-all"
+            placeholder={isThinking ? "Gemini is breaking it down..." : "What's on your mind?"}
           />
-          <div className="absolute inset-y-0 right-1.5 sm:right-4 flex items-center gap-0.5 sm:gap-2">
+
+          {/* Actions Right */}
+          <div className="flex items-center gap-1 pr-2">
             {selectedDate && (
-               <div className="flex items-center gap-0.5 bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[9px] sm:text-xs font-bold whitespace-nowrap">
+               <div className="hidden sm:flex items-center gap-1 bg-primary/10 text-primary px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider whitespace-nowrap animate-in fade-in zoom-in duration-200">
                  <span>{getButtonLabel()}</span>
-                 <button onClick={() => setSelectedDate(null)} className="flex items-center"><span className="material-symbols-outlined !text-[12px]">close</span></button>
+                 <button onClick={() => setSelectedDate(null)} className="flex items-center hover:bg-primary/20 rounded-full p-0.5"><span className="material-symbols-outlined !text-[14px]">close</span></button>
                </div>
             )}
+            
             <div className="relative" ref={calendarRef}>
-                <button onClick={() => setShowCalendar(!showCalendar)} className={`p-1 sm:p-1.5 rounded-lg ${showCalendar || selectedDate ? 'bg-primary/10 text-primary' : 'text-slate-400 hover:bg-slate-100'}`}>
-                  <span className="material-symbols-outlined !text-[18px] sm:!text-[20px]">calendar_today</span>
+                <button 
+                  onClick={() => setShowCalendar(!showCalendar)} 
+                  className={`p-2.5 rounded-full transition-all ${showCalendar || selectedDate ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                  title="Add due date"
+                >
+                  <span className="material-symbols-outlined !text-[22px]">calendar_today</span>
                 </button>
+                
                 {showCalendar && (
-                  <div className={`absolute bottom-full right-0 mb-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 p-2 flex flex-col gap-1 transition-all ${isCustomDateOpen ? 'w-60' : 'w-48'} max-w-[85vw]`}>
+                  <div className={`absolute bottom-full right-0 mb-4 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 p-3 flex flex-col gap-1 transition-all animate-in slide-in-from-bottom-2 zoom-in-95 duration-200 ${isCustomDateOpen ? 'w-64' : 'w-52'} max-w-[90vw]`}>
                     {!isCustomDateOpen ? (
-                      <div>
-                        <button onClick={() => handleDateSelect(0)} className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg w-full">
-                          <span className="material-symbols-outlined !text-base text-green-500">today</span>
-                          <span className="text-[10px] sm:text-xs font-semibold">Today</span>
+                      <div className="space-y-1">
+                        <button onClick={() => handleDateSelect(0)} className="flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-2xl w-full text-left transition-colors">
+                          <div className="w-8 h-8 rounded-xl bg-green-50 dark:bg-green-900/30 flex items-center justify-center text-green-500">
+                            <span className="material-symbols-outlined !text-[20px]">today</span>
+                          </div>
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Today</span>
                         </button>
-                        <button onClick={() => handleDateSelect(1)} className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg w-full">
-                          <span className="material-symbols-outlined !text-base text-orange-400">wb_sunny</span>
-                          <span className="text-[10px] sm:text-xs font-semibold">Tomorrow</span>
+                        <button onClick={() => handleDateSelect(1)} className="flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-2xl w-full text-left transition-colors">
+                          <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center text-orange-400">
+                            <span className="material-symbols-outlined !text-[20px]">wb_sunny</span>
+                          </div>
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Tomorrow</span>
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); setIsCustomDateOpen(true); }} className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg w-full border-t border-slate-50 dark:border-slate-700 mt-1">
-                          <span className="material-symbols-outlined !text-base text-slate-400">edit_calendar</span>
-                          <span className="text-[10px] sm:text-xs font-semibold">Custom</span>
+                        <button onClick={(e) => { e.stopPropagation(); setIsCustomDateOpen(true); }} className="flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-2xl w-full text-left transition-colors border-t border-slate-50 dark:border-slate-700 mt-2">
+                          <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                            <span className="material-symbols-outlined !text-[20px]">edit_calendar</span>
+                          </div>
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Custom...</span>
                         </button>
                       </div>
                     ) : renderCustomCalendar()}
                   </div>
                 )}
             </div>
-            <button onClick={() => setHasNotification(!hasNotification)} className={`p-1 sm:p-1.5 rounded-lg ${hasNotification ? 'bg-accent text-slate-900' : 'text-slate-400'}`}>
-              <span className={`material-symbols-outlined !text-[18px] sm:!text-[20px] ${hasNotification ? 'filled' : ''}`}>notifications</span>
+
+            <button 
+              onClick={() => setHasNotification(!hasNotification)} 
+              className={`p-2.5 rounded-full transition-all ${hasNotification ? 'bg-accent text-slate-900 shadow-lg shadow-accent/20' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+              title="Set notification"
+            >
+              <span className={`material-symbols-outlined !text-[22px] ${hasNotification ? 'filled' : ''}`}>notifications</span>
             </button>
-            <button onClick={handleAiTaskCreation} disabled={isThinking || !inputValue.trim()} className={`p-1 sm:p-1.5 rounded-lg ${isThinking ? 'bg-purple-100 text-purple-600 animate-pulse' : 'text-purple-500'}`}>
-                <span className={`material-symbols-outlined !text-[18px] sm:!text-[20px] ${isThinking ? 'animate-spin' : ''}`}>{isThinking ? 'refresh' : 'auto_awesome'}</span>
+
+            <button 
+              onClick={handleAiTaskCreation} 
+              disabled={isThinking || !inputValue.trim()} 
+              className={`p-2.5 rounded-full transition-all ${isThinking ? 'bg-purple-600 text-white animate-pulse' : inputValue.trim() ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:scale-110' : 'text-slate-300 dark:text-slate-700'}`}
+              title="AI Magic Breakdown"
+            >
+                <span className={`material-symbols-outlined !text-[22px] ${isThinking ? 'animate-spin' : ''}`}>
+                  {isThinking ? 'sync' : 'auto_awesome'}
+                </span>
             </button>
+
+            {inputValue.trim() && !isThinking && (
+              <button 
+                onClick={submitTask}
+                className="ml-2 bg-primary text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg shadow-primary/30 hover:scale-105 active:scale-95 transition-all animate-in slide-in-from-right-4 duration-300"
+              >
+                <span className="material-symbols-outlined !text-[20px] font-black">arrow_upward</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
