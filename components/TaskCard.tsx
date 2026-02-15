@@ -41,10 +41,10 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, index, onToggleStatus, onTogg
             viewMode === 'board'
             ? `bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 group hover:border-primary/30 dark:hover:border-primary/50 cursor-pointer
                 ${isCompleted ? 'bg-white/60 dark:bg-slate-800/60 border-dashed border-slate-300 dark:border-slate-600' : ''}
-                ${snapshot.isDragging ? 'shadow-lg rotate-2 ring-2 ring-primary/20 z-50' : 'transition-colors'}`
+                ${snapshot.isDragging ? 'shadow-lg rotate-2 ring-2 ring-primary/20 z-[100]' : 'transition-colors'}`
             : `bg-white dark:bg-slate-800 p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer group
                ${isCompleted ? 'opacity-60 bg-slate-50 dark:bg-slate-800/50' : ''}
-               ${snapshot.isDragging ? 'shadow-lg ring-1 ring-slate-200 dark:ring-slate-700 z-50' : 'transition-colors'}`
+               ${snapshot.isDragging ? 'shadow-lg ring-1 ring-slate-200 dark:ring-slate-700 z-[100]' : 'transition-colors'}`
           }
         >
           <div className={`flex ${viewMode === 'board' ? 'items-start gap-3' : 'items-center gap-4'}`}>

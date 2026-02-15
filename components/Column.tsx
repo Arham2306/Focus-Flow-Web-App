@@ -77,8 +77,14 @@ const Column: React.FC<ColumnProps> = ({
   };
 
   return (
-    <div className={viewMode === 'board' ? "board-column flex flex-col h-full bg-column-bg/50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-4 shrink-0 transition-colors duration-200 snap-center" : "w-full flex flex-col bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700/50 overflow-hidden shrink-0 transition-colors duration-200"}>
-      <div className={viewMode === 'board' ? "flex items-center justify-between mb-4 px-2" : "p-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between"}>
+    <div 
+      className={
+        viewMode === 'board' 
+        ? "board-column flex flex-col h-full bg-column-bg/50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-4 shrink-0 transition-colors duration-200 snap-center" 
+        : `w-full flex flex-col bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700/50 shrink-0 transition-all duration-200 relative ${showSortMenu ? 'z-50' : ''}`
+      }
+    >
+      <div className={viewMode === 'board' ? "flex items-center justify-between mb-4 px-2" : "p-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 rounded-t-xl flex items-center justify-between"}>
         <h3 className="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2 truncate pr-2">
           <span className={`w-2 h-2 rounded-full shrink-0 ${colorClass}`}></span>
           <span className="truncate">{title}</span>
@@ -106,7 +112,7 @@ const Column: React.FC<ColumnProps> = ({
               </button>
             )}
             {showSortMenu && (
-                <div className="absolute top-full right-0 mt-2 w-40 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 p-1.5 z-50 animate-in zoom-in-95 duration-150 origin-top-right backdrop-blur-md">
+                <div className="absolute top-full right-0 mt-2 w-40 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 p-1.5 z-[60] animate-in zoom-in-95 duration-150 origin-top-right backdrop-blur-md">
                     <p className="px-2 py-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 dark:border-slate-700 mb-1">Sort by</p>
                     {[
                         { label: 'Priority', icon: 'priority_high', option: SortOption.PRIORITY },
@@ -124,7 +130,15 @@ const Column: React.FC<ColumnProps> = ({
       </div>
       <Droppable droppableId={id}>
         {(provided, snapshot) => (
-          <div ref={provided.innerRef} {...provided.droppableProps} className={viewMode === 'board' ? `flex-1 space-y-3 overflow-y-auto pr-1 custom-scrollbar transition-colors rounded-xl ${snapshot.isDraggingOver ? 'bg-slate-200/50 dark:bg-slate-800/50' : ''}` : `transition-colors divide-y divide-slate-100 dark:divide-slate-800 ${snapshot.isDraggingOver ? 'bg-slate-50 dark:bg-slate-800/50' : ''}`}>
+          <div 
+            ref={provided.innerRef} 
+            {...provided.droppableProps} 
+            className={
+              viewMode === 'board' 
+              ? `flex-1 space-y-3 overflow-y-auto pr-1 custom-scrollbar transition-colors rounded-xl ${snapshot.isDraggingOver ? 'bg-slate-200/50 dark:bg-slate-800/50' : ''}` 
+              : `transition-colors divide-y divide-slate-100 dark:divide-slate-800 rounded-b-xl ${snapshot.isDraggingOver ? 'bg-slate-50 dark:bg-slate-800/50' : ''}`
+            }
+          >
             {sortedTasks.map((task, index) => (
               <TaskCard key={task.id} task={task} index={index} onToggleStatus={onToggleStatus} onToggleImportant={onToggleImportant} onClick={onTaskClick} viewMode={viewMode} />
             ))}
