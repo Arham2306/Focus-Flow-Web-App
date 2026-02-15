@@ -94,7 +94,8 @@ const AddTaskBar = forwardRef<HTMLInputElement, AddTaskBarProps>(({ onAddTask },
   const getButtonLabel = () => {
     if (!selectedDate) return '';
     if (isToday(selectedDate)) return 'Today';
-    if (isTomorrow(selectedDate)) return 'Tom.';
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+    if (selectedDate.toDateString() === tomorrow.toDateString()) return 'Tom.';
     return selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
@@ -127,7 +128,7 @@ const AddTaskBar = forwardRef<HTMLInputElement, AddTaskBarProps>(({ onAddTask },
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-8 flex justify-center pointer-events-none z-[60]">
+    <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8 flex justify-center pointer-events-none z-[60]">
       <div className={`
         relative w-full max-w-3xl bg-white/90 dark:bg-slate-900/95 backdrop-blur-2xl rounded-[2.5rem] shadow-[0_30px_70px_rgba(0,0,0,0.2)] dark:shadow-[0_30px_70px_rgba(0,0,0,0.5)] border border-white/40 dark:border-slate-800/50 p-2 sm:p-2.5 pointer-events-auto transition-all duration-500
         ${isThinking ? 'ring-2 ring-purple-500/30' : ''}
@@ -184,7 +185,7 @@ const AddTaskBar = forwardRef<HTMLInputElement, AddTaskBarProps>(({ onAddTask },
                         </button>
                         <button onClick={() => handleDateSelect(1)} className="flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-2xl w-full text-left transition-all hover:scale-[1.02]">
                           <div className="w-10 h-10 rounded-2xl bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center text-orange-400">
-                            <span className="material-symbols-outlined !text-[24px]">wb_sunny</span>
+                            <span className="material-symbols-outlined !text-[24px]">tomorrow</span>
                           </div>
                           <span className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">Tomorrow</span>
                         </button>

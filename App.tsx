@@ -258,7 +258,7 @@ const App: React.FC = () => {
             <AdventureView tasks={filteredTasks} onTaskClick={setSelectedTask} onToggleStatus={toggleStatus} />
           ) : (
             <DragDropContext onDragEnd={onDragEnd}>
-              <div className={`h-full p-3 sm:p-4 lg:p-6 overflow-x-auto custom-scrollbar flex transition-all ${viewMode === 'board' ? 'gap-4 sm:gap-6 items-start' : 'flex-col gap-4 sm:gap-6'}`}>
+              <div className={`h-full p-3 sm:p-4 lg:p-6 pb-24 sm:pb-32 overflow-x-auto custom-scrollbar flex transition-all ${viewMode === 'board' ? 'gap-4 sm:gap-6 items-start' : 'flex-col gap-4 sm:gap-6'}`}>
                 {columns.map((col) => (
                   <Column
                     key={col.id} id={col.id} title={col.title} colorClass={col.colorClass}
