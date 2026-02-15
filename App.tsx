@@ -269,24 +269,22 @@ const App: React.FC = () => {
                   />
                 ))}
 
-                {viewMode === 'board' && (
-                  <div className="board-column shrink-0 flex flex-col h-full">
-                    {!isAddingColumn ? (
-                        <button onClick={() => setIsAddingColumn(true)} className="w-full h-24 sm:h-32 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col items-center justify-center text-slate-400 hover:text-primary transition-all group">
-                            <span className="material-symbols-outlined !text-2xl sm:!text-3xl mb-1 sm:mb-2 transition-transform group-hover:scale-110">add_circle</span>
-                            <span className="text-[10px] font-black uppercase tracking-widest">Add Column</span>
-                        </button>
-                    ) : (
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 sm:p-4 rounded-2xl shadow-xl">
-                             <input autoFocus value={newColumnTitle} onChange={(e) => setNewColumnTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addColumn()} onBlur={addColumn} className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl py-2 px-3 text-sm font-bold placeholder-slate-400 mb-2" placeholder="Title..." />
-                             <div className="flex gap-2">
-                                <button onClick={addColumn} className="flex-1 py-1.5 bg-primary text-white rounded-lg text-[10px] font-bold">Add</button>
-                                <button onClick={() => setIsAddingColumn(false)} className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg text-[10px] font-bold">Cancel</button>
-                             </div>
-                        </div>
-                    )}
-                  </div>
-                )}
+                <div className={`${viewMode === 'board' ? 'board-column shrink-0' : 'w-full'} flex flex-col`}>
+                  {!isAddingColumn ? (
+                      <button onClick={() => setIsAddingColumn(true)} className={`w-full ${viewMode === 'board' ? 'h-24 sm:h-32' : 'h-16'} border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-center gap-2 text-slate-400 hover:text-primary transition-all group shrink-0`}>
+                          <span className="material-symbols-outlined !text-xl sm:!text-2xl transition-transform group-hover:scale-110">add_circle</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest">Add Column</span>
+                      </button>
+                  ) : (
+                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 sm:p-4 rounded-2xl shadow-xl shrink-0">
+                           <input autoFocus value={newColumnTitle} onChange={(e) => setNewColumnTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addColumn()} onBlur={addColumn} className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl py-2 px-3 text-sm font-bold placeholder-slate-400 mb-2" placeholder="Title..." />
+                           <div className="flex gap-2">
+                              <button onClick={addColumn} className="flex-1 py-1.5 bg-primary text-white rounded-lg text-[10px] font-bold">Add</button>
+                              <button onClick={() => setIsAddingColumn(false)} className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg text-[10px] font-bold">Cancel</button>
+                           </div>
+                      </div>
+                  )}
+                </div>
               </div>
             </DragDropContext>
           )}
