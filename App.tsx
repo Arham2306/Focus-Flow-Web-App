@@ -59,7 +59,10 @@ const App: React.FC = () => {
   const [activeNav, setActiveNav] = useState('my-day');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [viewMode, setViewMode] = useState<'board' | 'table'>('board');
+  const [viewMode, setViewMode] = useState<'board' | 'table'>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 640) return 'table';
+    return 'board';
+  });
   const [adventureMode, setAdventureMode] = useState(false);
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnTitle, setNewColumnTitle] = useState('');
