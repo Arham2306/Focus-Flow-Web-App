@@ -1,0 +1,16 @@
+
+# Security: Ignore environment variables
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store
