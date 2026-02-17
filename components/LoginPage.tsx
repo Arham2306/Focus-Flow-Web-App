@@ -11,12 +11,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onSwitchToSignup, onBack
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signInWithEmail, signInWithGoogle } = useAuth();
+  const { signInWithEmail, signInWithGoogle, resetPassword } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setIsLoading(true);
     try {
       await signInWithEmail(email, password);
@@ -29,10 +31,26 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onSwitchToSignup, onBack
 
   const handleGoogleLogin = async () => {
     setError('');
+    setSuccess('');
     try {
       await signInWithGoogle();
     } catch (err: any) {
       setError(err.message?.replace('Firebase: ', '') || 'Google sign-in failed');
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError('Please enter your email address first');
+      return;
+    }
+    setError('');
+    setSuccess('');
+    try {
+      await resetPassword(email);
+      setSuccess('Reset link sent to your email!');
+    } catch (err: any) {
+      setError(err.message?.replace('Firebase: ', '') || 'Failed to send reset email');
     }
   };
 
@@ -68,7 +86,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onSwitchToSignup, onBack
             <div>
               <div className="flex justify-between mb-2 ml-1">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Password</label>
-                <button type="button" className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">Forgot?</button>
+                <button type="button" onClick={handleForgotPassword} className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">Forgot?</button>
               </div>
               <input
                 type="password"
@@ -79,6 +97,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onSwitchToSignup, onBack
                 className="w-full px-5 py-4 bg-white dark:bg-slate-800 border-none rounded-2xl text-sm focus:ring-2 focus:ring-primary/20 transition-all dark:text-white"
               />
             </div>
+
+            {success && (
+              <p className="text-green-500 text-xs font-bold text-center bg-green-50 dark:bg-green-900/20 p-3 rounded-xl">{success}</p>
+            )}
 
             {error && (
               <p className="text-red-500 text-xs font-bold text-center bg-red-50 dark:bg-red-900/20 p-3 rounded-xl">{error}</p>

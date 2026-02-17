@@ -9,13 +9,14 @@ import AdventureView from './components/AdventureView';
 import LandingPage from './components/LandingPage';
 import ProfileView from './components/ProfileView';
 import EditProfileView from './components/EditProfileView';
+import SetPasswordView from './components/SetPasswordView';
 import { INITIAL_TASKS, NAV_ITEMS } from './constants';
 import { Task, ColumnId, TaskStatus, ColumnData, SortOption, TaskPriority } from './types';
 import confetti from 'canvas-confetti';
 import { useAuth } from './AuthContext';
 
 const App: React.FC = () => {
-  const { currentUser, loading, signInWithGoogle, logout } = useAuth();
+  const { currentUser, loading, signInWithGoogle, logout, needsPassword } = useAuth();
   const isLoggedIn = !!currentUser;
 
   const [tasks, setTasks] = useState<Task[]>(() => {
@@ -239,6 +240,8 @@ const App: React.FC = () => {
   }
 
   if (!isLoggedIn) return <LandingPage onLogin={signInWithGoogle} darkMode={darkMode} onToggleDarkMode={toggleDarkMode} />;
+
+  if (needsPassword) return <SetPasswordView />;
 
   return (
     <div className="flex h-screen bg-background-light dark:bg-slate-950 overflow-hidden transition-colors duration-200">

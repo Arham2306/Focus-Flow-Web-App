@@ -26,6 +26,10 @@ interface AuthContextType {
   userMetadata: UserMetadata;
   updateUserMetadata: (metadata: UserMetadata) => void;
   logout: () => Promise<void>;
+  needsPassword: boolean;
+  linkPassword: (password: string) => Promise<void>;
+  changePassword: (newPassword: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -46,6 +50,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userMetadata, setUserMetadata] = useState<UserMetadata>({});
   const [loading, setLoading] = useState(true);
+
+  // Check if user has a password provider linked
+  const needsPassword = currentUser !== null &&
+    !currentUser.providerData.some(p => p.providerId === 'password');
 
   useEffect(() => {
     if (currentUser) {
@@ -113,6 +121,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // For initial Google Auth password setup
+  const linkPassword = async (password: string) => {
+    if (!currentUser || !currentUser.email) throw new Error("No authenticated user");
+
+    try {
+      const { EmailAuthProvider, linkWithCredential } = await import('firebase/auth');
+      const credential = EmailAuthProvider.credential(currentUser.email, password);
+      await linkWithCredential(currentUser, credential);
+      // Force refresh user state to update providerData
+      setCurrentUser({ ...auth.currentUser! } as User);
+    } catch (error) {
+      console.error("Error linking password", error);
+      throw error;
+    }
+  };
+
+  const changePassword = async (newPassword: string) => {
+    if (!currentUser) throw new Error("No user logged in");
+    try {
+      const { updatePassword } = await import('firebase/auth');
+      await updatePassword(currentUser, newPassword);
+    } catch (error) {
+      console.error("Error changing password", error);
+      throw error;
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    try {
+      const { sendPasswordResetEmail } = await import('firebase/auth');
+      await sendPasswordResetEmail(auth, email);
+    } catch (error) {
+      console.error("Error resetting password", error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
       setCurrentUser(user);
@@ -123,7 +168,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ currentUser, loading, signInWithGoogle: signInWithGoogleFn, signUpWithEmail, signInWithEmail: signInWithEmailFn, updateUserProfile, userMetadata, updateUserMetadata, logout }}>
+    <AuthContext.Provider value={{
+      currentUser,
+      loading,
+      signInWithGoogle: signInWithGoogleFn,
+      signUpWithEmail,
+      signInWithEmail: signInWithEmailFn,
+      updateUserProfile,
+      userMetadata,
+      updateUserMetadata,
+      logout,
+      needsPassword,
+      linkPassword,
+      changePassword,
+      resetPassword
+    }}>
       {!loading && children}
     </AuthContext.Provider>
   );
