@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import { Task, ColumnData, TaskStatus, Subtask, TaskPriority, ColumnId } from '../types';
@@ -172,7 +173,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, columns, onClose, onUpdate,
                     <span className="material-symbols-outlined !text-sm text-green-500">today</span> Today
                  </button>
                  <button onClick={() => { const d = new Date(); d.setDate(d.getDate()+1); handleDateSelect(d); }} className="text-left px-2 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-primary flex items-center gap-2">
-                    <span className="material-symbols-outlined !text-sm text-orange-400">wb_sunny</span> Tomorrow
+                    <span className="material-symbols-outlined !text-sm text-orange-400">calendar_today</span> Tomorrow
                  </button>
             </div>
             <div className="flex items-center justify-between mb-3 px-1">

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, forwardRef } from 'react';
 import { Task, Subtask } from '../types';
 import { GoogleGenAI, Type } from "@google/genai";
@@ -185,7 +186,7 @@ const AddTaskBar = forwardRef<HTMLInputElement, AddTaskBarProps>(({ onAddTask },
                         </button>
                         <button onClick={() => handleDateSelect(1)} className="flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-2xl w-full text-left transition-all hover:scale-[1.02]">
                           <div className="w-10 h-10 rounded-2xl bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center text-orange-400">
-                            <span className="material-symbols-outlined !text-[24px]">tomorrow</span>
+                            <span className="material-symbols-outlined !text-[24px]">calendar_today</span>
                           </div>
                           <span className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">Tomorrow</span>
                         </button>
