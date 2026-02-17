@@ -6,8 +6,15 @@ import {
   onAuthStateChanged,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  updateProfile,
   User
 } from 'firebase/auth';
+
+export interface UserMetadata {
+  bio?: string;
+  role?: string;
+  dailyGoal?: number;
+}
 
 interface AuthContextType {
   currentUser: User | null;
@@ -15,6 +22,9 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
+  updateUserProfile: (displayName: string, photoURL: string) => Promise<void>;
+  userMetadata: UserMetadata;
+  updateUserMetadata: (metadata: UserMetadata) => void;
   logout: () => Promise<void>;
 }
 
@@ -34,7 +44,30 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [userMetadata, setUserMetadata] = useState<UserMetadata>({});
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (currentUser) {
+      const saved = localStorage.getItem(`focusflow-metadata-${currentUser.uid}`);
+      if (saved) {
+        try {
+          setUserMetadata(JSON.parse(saved));
+        } catch (e) {
+          console.error("Failed to parse user metadata", e);
+        }
+      } else {
+        setUserMetadata({});
+      }
+    }
+  }, [currentUser]);
+
+  const updateUserMetadata = (metadata: UserMetadata) => {
+    if (!currentUser) return;
+    const newMetadata = { ...userMetadata, ...metadata };
+    setUserMetadata(newMetadata);
+    localStorage.setItem(`focusflow-metadata-${currentUser.uid}`, JSON.stringify(newMetadata));
+  };
 
   const signInWithGoogleFn = async () => {
     try {
@@ -67,6 +100,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return signOut(auth);
   };
 
+  const updateUserProfile = async (displayName: string, photoURL: string) => {
+    if (!currentUser) throw new Error("No user logged in");
+    try {
+      await updateProfile(currentUser, { displayName, photoURL });
+      // Force refresh user state
+      const updatedUser = { ...currentUser, displayName, photoURL };
+      setCurrentUser(updatedUser as User);
+    } catch (error) {
+      console.error("Error updating profile", error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
       setCurrentUser(user);
@@ -77,7 +123,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ currentUser, loading, signInWithGoogle: signInWithGoogleFn, signUpWithEmail, signInWithEmail: signInWithEmailFn, logout }}>
+    <AuthContext.Provider value={{ currentUser, loading, signInWithGoogle: signInWithGoogleFn, signUpWithEmail, signInWithEmail: signInWithEmailFn, updateUserProfile, userMetadata, updateUserMetadata, logout }}>
       {!loading && children}
     </AuthContext.Provider>
   );

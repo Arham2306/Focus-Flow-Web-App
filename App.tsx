@@ -8,6 +8,7 @@ import PomodoroTimer from './components/PomodoroTimer';
 import AdventureView from './components/AdventureView';
 import LandingPage from './components/LandingPage';
 import ProfileView from './components/ProfileView';
+import EditProfileView from './components/EditProfileView';
 import { INITIAL_TASKS, NAV_ITEMS } from './constants';
 import { Task, ColumnId, TaskStatus, ColumnData, SortOption, TaskPriority } from './types';
 import confetti from 'canvas-confetti';
@@ -123,8 +124,10 @@ const App: React.FC = () => {
 
     if (destination.droppableId === ColumnId.COMPLETED) {
       removed.status = TaskStatus.COMPLETED;
+      removed.completedDate = new Date().toISOString();
     } else {
       removed.status = TaskStatus.TODO;
+      delete removed.completedDate;
     }
     removed.columnId = destination.droppableId;
 
@@ -197,8 +200,14 @@ const App: React.FC = () => {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
     const newStatus = task.status === TaskStatus.COMPLETED ? TaskStatus.TODO : TaskStatus.COMPLETED;
-    const newColumnId = newStatus === TaskStatus.COMPLETED ? ColumnId.COMPLETED : ColumnId.TODAY;
-    updateTask({ ...task, status: newStatus, columnId: newColumnId });
+    const isCompleted = newStatus === TaskStatus.COMPLETED;
+    const newColumnId = isCompleted ? ColumnId.COMPLETED : ColumnId.TODAY;
+    updateTask({
+      ...task,
+      status: newStatus,
+      columnId: newColumnId,
+      completedDate: isCompleted ? new Date().toISOString() : undefined
+    });
     if (newStatus === TaskStatus.COMPLETED) {
       confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }, colors: ['#FF5F5F', '#FFD700', '#4ade80'] });
     }
@@ -242,9 +251,9 @@ const App: React.FC = () => {
       <main className="flex-1 flex flex-col min-w-0 h-full relative">
         <header className="p-3 sm:p-4 lg:p-6 flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors">
           <div className="flex items-center gap-2 sm:gap-4 overflow-hidden">
-            {activeNav === 'profile' ? (
+            {activeNav === 'profile' || activeNav === 'edit-profile' ? (
               <button
-                onClick={() => setActiveNav('my-day')}
+                onClick={() => setActiveNav(activeNav === 'edit-profile' ? 'profile' : 'my-day')}
                 className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-primary flex items-center gap-1"
               >
                 <span className="material-symbols-outlined !text-[20px]">arrow_back</span>
@@ -257,7 +266,7 @@ const App: React.FC = () => {
             )}
             <div className="truncate">
               <h2 className="text-base sm:text-xl font-black text-slate-800 dark:text-white tracking-tight truncate">
-                {activeNav === 'profile' ? 'Profile' : (NAV_ITEMS.find(n => n.id === activeNav)?.label || 'Dashboard')}
+                {activeNav === 'profile' ? 'Profile' : activeNav === 'edit-profile' ? 'Edit Profile' : (NAV_ITEMS.find(n => n.id === activeNav)?.label || 'Dashboard')}
               </h2>
               <p className="text-[8px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">
                 {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
@@ -349,7 +358,10 @@ const App: React.FC = () => {
               darkMode={darkMode}
               onToggleDarkMode={toggleDarkMode}
               onLogout={logout}
+              onEditProfile={() => setActiveNav('edit-profile')}
             />
+          ) : activeNav === 'edit-profile' ? (
+            <EditProfileView onBack={() => setActiveNav('profile')} />
           ) : adventureMode ? (
             <AdventureView tasks={filteredTasks} onTaskClick={setSelectedTask} onToggleStatus={toggleStatus} />
           ) : (
@@ -387,7 +399,7 @@ const App: React.FC = () => {
           )}
         </div>
 
-        {activeNav !== 'profile' && <AddTaskBar onAddTask={addTask} />}
+        {activeNav !== 'profile' && activeNav !== 'edit-profile' && <AddTaskBar onAddTask={addTask} />}
         <PomodoroTimer />
         {selectedTask && (
           <TaskModal task={selectedTask} columns={columns} onClose={() => setSelectedTask(null)} onUpdate={updateTask} onDelete={deleteTask} />

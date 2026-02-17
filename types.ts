@@ -48,4 +48,5 @@ export interface Task {
   subtasks?: Subtask[];
   description?: string;
   priority?: TaskPriority;
+  completedDate?: string; // ISO string
 }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NAV_ITEMS } from '../constants';
 import { Task, TaskStatus } from '../types';
+import { useAuth } from '../AuthContext';
 
 interface SidebarProps {
   darkMode: boolean;
@@ -15,11 +16,18 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ darkMode, toggleDarkMode, activeNav, setActiveNav, isOpen, onClose, tasks, onLogout, onAddTask }) => {
+  const { userMetadata } = useAuth();
   const [sidebarTaskInput, setSidebarTaskInput] = useState('');
-  
-  const completedCount = tasks.filter(t => t.status === TaskStatus.COMPLETED).length;
-  const totalCount = tasks.length;
-  const progressPercentage = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
+
+  const todayStr = new Date().toDateString();
+  const completedToday = tasks.filter(t => {
+    if (t.status !== TaskStatus.COMPLETED) return false;
+    if (!t.completedDate) return true;
+    return new Date(t.completedDate).toDateString() === todayStr;
+  }).length;
+
+  const goalTarget = userMetadata.dailyGoal || 5;
+  const progressPercentage = Math.min(100, Math.round((completedToday / goalTarget) * 100));
 
   const handleSidebarTaskSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,14 +41,14 @@ const Sidebar: React.FC<SidebarProps> = ({ darkMode, toggleDarkMode, activeNav, 
     <>
       {/* Mobile Backdrop */}
       {isOpen && (
-        <div 
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] lg:hidden animate-in fade-in duration-300" 
-          onClick={onClose} 
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] lg:hidden animate-in fade-in duration-300"
+          onClick={onClose}
         />
       )}
 
       {/* Sidebar Content */}
-      <aside 
+      <aside
         className={`fixed inset-y-0 left-0 z-[110] w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between p-6 shadow-2xl lg:shadow-none shrink-0 h-full transition-transform duration-500 ease-in-out lg:translate-x-0 lg:static
             ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
@@ -52,11 +60,11 @@ const Sidebar: React.FC<SidebarProps> = ({ darkMode, toggleDarkMode, activeNav, 
               <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">Flow state unlocked</p>
             </div>
             {/* Close button for mobile only */}
-            <button 
-                onClick={onClose} 
-                className="lg:hidden text-slate-400 hover:text-primary transition-colors p-1"
+            <button
+              onClick={onClose}
+              className="lg:hidden text-slate-400 hover:text-primary transition-colors p-1"
             >
-                <span className="material-symbols-outlined">close</span>
+              <span className="material-symbols-outlined">close</span>
             </button>
           </div>
 
@@ -65,8 +73,8 @@ const Sidebar: React.FC<SidebarProps> = ({ darkMode, toggleDarkMode, activeNav, 
             <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">New Entry</h4>
             <form onSubmit={handleSidebarTaskSubmit} className="relative group">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined !text-[18px] text-slate-300 dark:text-slate-600 group-focus-within:text-primary transition-colors">edit_note</span>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={sidebarTaskInput}
                 onChange={(e) => setSidebarTaskInput(e.target.value)}
                 placeholder="What's next?"
@@ -86,16 +94,16 @@ const Sidebar: React.FC<SidebarProps> = ({ darkMode, toggleDarkMode, activeNav, 
               <button
                 key={item.id}
                 onClick={() => {
-                    setActiveNav(item.id);
-                    onClose();
+                  setActiveNav(item.id);
+                  onClose();
                 }}
                 className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl font-black transition-all w-full text-left group
-                  ${activeNav === item.id 
-                    ? 'bg-primary/10 text-primary shadow-sm shadow-primary/5' 
+                  ${activeNav === item.id
+                    ? 'bg-primary/10 text-primary shadow-sm shadow-primary/5'
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                   }`}
               >
-                <span 
+                <span
                   className={`material-symbols-outlined !text-[22px] transition-all duration-300 group-hover:scale-110
                     ${activeNav === item.id ? 'filled' : 'text-slate-400 dark:text-slate-500 group-hover:text-primary'}
                   `}
@@ -109,19 +117,19 @@ const Sidebar: React.FC<SidebarProps> = ({ darkMode, toggleDarkMode, activeNav, 
 
           {/* Productivity Stats Widget */}
           <div className="mt-auto px-5 py-6 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] border border-slate-100 dark:border-slate-800/50 shadow-inner">
-             <div className="flex items-center justify-between mb-4">
-                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Progress</span>
-                <span className="text-xs font-black text-primary">{progressPercentage}%</span>
-             </div>
-             <div className="h-2.5 w-full bg-slate-200 dark:bg-slate-700/50 rounded-full overflow-hidden mb-4 shadow-sm">
-                <div 
-                  className="h-full bg-primary transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(255,95,95,0.3)]" 
-                  style={{ width: `${progressPercentage}%` }}
-                />
-             </div>
-             <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                {completedCount} / {totalCount} goals reached
-             </p>
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Progress</span>
+              <span className="text-xs font-black text-primary">{progressPercentage}%</span>
+            </div>
+            <div className="h-2.5 w-full bg-slate-200 dark:bg-slate-700/50 rounded-full overflow-hidden mb-4 shadow-sm">
+              <div
+                className="h-full bg-primary transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(255,95,95,0.3)]"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+            <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              {completedToday} / {goalTarget} goals reached
+            </p>
           </div>
         </div>
 
@@ -135,12 +143,12 @@ const Sidebar: React.FC<SidebarProps> = ({ darkMode, toggleDarkMode, activeNav, 
               Mode
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" checked={darkMode} onChange={toggleDarkMode} className="sr-only peer" />
-                <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+              <input type="checkbox" checked={darkMode} onChange={toggleDarkMode} className="sr-only peer" />
+              <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
             </label>
           </div>
 
-          <button 
+          <button
             onClick={onLogout}
             className="flex items-center gap-3 px-3 py-3 w-full text-slate-400 hover:text-red-500 transition-all font-black text-xs uppercase tracking-widest group"
           >
