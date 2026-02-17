@@ -63,6 +63,8 @@ const App: React.FC = () => {
   const [adventureMode, setAdventureMode] = useState(false);
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnTitle, setNewColumnTitle] = useState('');
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     try {
@@ -93,6 +95,16 @@ const App: React.FC = () => {
   }, [darkMode]);
 
   const toggleDarkMode = () => setDarkMode(!darkMode);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+        setProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const onDragEnd = (result: DropResult) => {
     const { source, destination } = result;
@@ -253,6 +265,65 @@ const App: React.FC = () => {
             <button onClick={() => setViewMode(viewMode === 'board' ? 'table' : 'board')} className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-primary ${adventureMode ? 'opacity-50' : ''}`} disabled={adventureMode}>
               <span className="material-symbols-outlined !text-[18px] sm:!text-[20px]">{viewMode === 'board' ? 'list' : 'dashboard'}</span>
             </button>
+
+            {/* Profile Avatar with Dropdown */}
+            <div className="relative ml-1 flex items-center" ref={profileDropdownRef}>
+              <button onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} className="focus:outline-none flex items-center">
+                {currentUser?.photoURL ? (
+                  <img
+                    src={currentUser.photoURL}
+                    alt={currentUser.displayName || 'Profile'}
+                    className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 object-cover transition-colors ${profileDropdownOpen ? 'border-primary' : 'border-slate-200 dark:border-slate-700 hover:border-primary'}`}
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 bg-primary/10 flex items-center justify-center transition-colors ${profileDropdownOpen ? 'border-primary' : 'border-slate-200 dark:border-slate-700 hover:border-primary'}`}>
+                    <span className="text-primary font-black text-xs sm:text-sm">
+                      {(currentUser?.displayName?.[0] || currentUser?.email?.[0] || 'U').toUpperCase()}
+                    </span>
+                  </div>
+                )}
+              </button>
+
+              {profileDropdownOpen && (
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] border border-slate-100 dark:border-slate-800 overflow-hidden animate-in slide-in-from-top-2 zoom-in-95 duration-200 z-50">
+                  {/* User Info */}
+                  <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center gap-3">
+                      {currentUser?.photoURL ? (
+                        <img src={currentUser.photoURL} alt="" className="w-10 h-10 rounded-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-primary font-black text-sm">{(currentUser?.displayName?.[0] || currentUser?.email?.[0] || 'U').toUpperCase()}</span>
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{currentUser?.displayName || 'User'}</p>
+                        <p className="text-[10px] text-slate-400 truncate">{currentUser?.email}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Menu Items */}
+                  <div className="p-2">
+                    <button
+                      onClick={() => setProfileDropdownOpen(false)}
+                      className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left"
+                    >
+                      <span className="material-symbols-outlined !text-[20px] text-slate-400">person</span>
+                      Profile
+                    </button>
+                    <button
+                      onClick={() => { setProfileDropdownOpen(false); logout(); }}
+                      className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left"
+                    >
+                      <span className="material-symbols-outlined !text-[20px]">logout</span>
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
