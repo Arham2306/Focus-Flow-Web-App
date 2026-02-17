@@ -13,6 +13,7 @@ const EditProfileView: React.FC<EditProfileViewProps> = ({ onBack }) => {
   const [dailyGoal, setDailyGoal] = useState(userMetadata.dailyGoal || 5);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -154,12 +155,21 @@ const EditProfileView: React.FC<EditProfileViewProps> = ({ onBack }) => {
                   <div className="relative">
                     <span className="absolute left-5 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400">lock</span>
                     <input
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full pl-14 pr-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 rounded-2xl text-sm font-bold placeholder-slate-400 focus:ring-2 focus:ring-primary/20 transition-all"
+                      className="w-full pl-14 pr-12 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 rounded-2xl text-sm font-bold placeholder-slate-400 focus:ring-2 focus:ring-primary/20 transition-all"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors flex items-center justify-center"
+                    >
+                      <span className="material-symbols-outlined !text-[20px]">
+                        {showPassword ? 'visibility_off' : 'visibility'}
+                      </span>
+                    </button>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -167,11 +177,11 @@ const EditProfileView: React.FC<EditProfileViewProps> = ({ onBack }) => {
                   <div className="relative">
                     <span className="absolute left-5 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400">lock_clock</span>
                     <input
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full pl-14 pr-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 rounded-2xl text-sm font-bold placeholder-slate-400 focus:ring-2 focus:ring-primary/20 transition-all"
+                      className="w-full pl-14 pr-12 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 rounded-2xl text-sm font-bold placeholder-slate-400 focus:ring-2 focus:ring-primary/20 transition-all"
                     />
                   </div>
                 </div>
