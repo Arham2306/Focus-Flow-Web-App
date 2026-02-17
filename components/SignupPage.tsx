@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '../AuthContext';
 
 interface SignupPageProps {
   onSignup: () => void;
@@ -10,16 +11,40 @@ const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onSwitchToLogin, onBa
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { signUpWithEmail, signInWithGoogle } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSignup(); // Simulating successful signup
+    setError('');
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await signUpWithEmail(email, password);
+    } catch (err: any) {
+      setError(err.message?.replace('Firebase: ', '') || 'Failed to create account');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignup = async () => {
+    setError('');
+    try {
+      await signInWithGoogle();
+    } catch (err: any) {
+      setError(err.message?.replace('Firebase: ', '') || 'Google sign-up failed');
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950 px-6 py-12 animate-in slide-in-from-right-8 duration-500">
       <div className="w-full max-w-md">
-        <button 
+        <button
           onClick={onBack}
           className="group mb-8 flex items-center gap-2 text-slate-400 hover:text-primary transition-colors font-bold text-sm"
         >
@@ -36,8 +61,8 @@ const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onSwitchToLogin, onBa
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Full Name</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -47,8 +72,8 @@ const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onSwitchToLogin, onBa
             </div>
             <div>
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Email Address</label>
-              <input 
-                type="email" 
+              <input
+                type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -58,8 +83,8 @@ const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onSwitchToLogin, onBa
             </div>
             <div>
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Password</label>
-              <input 
-                type="password" 
+              <input
+                type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -67,7 +92,7 @@ const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onSwitchToLogin, onBa
                 className="w-full px-5 py-4 bg-white dark:bg-slate-800 border-none rounded-2xl text-sm focus:ring-2 focus:ring-primary/20 transition-all dark:text-white"
               />
             </div>
-            
+
             <div className="flex items-start gap-3 py-2 ml-1">
               <input type="checkbox" required className="mt-1 h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/20 cursor-pointer" />
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
@@ -75,11 +100,16 @@ const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onSwitchToLogin, onBa
               </p>
             </div>
 
-            <button 
+            {error && (
+              <p className="text-red-500 text-xs font-bold text-center bg-red-50 dark:bg-red-900/20 p-3 rounded-xl">{error}</p>
+            )}
+
+            <button
               type="submit"
-              className="w-full bg-primary text-white py-4 rounded-2xl font-black text-lg shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all mt-4"
+              disabled={isLoading}
+              className="w-full bg-primary text-white py-4 rounded-2xl font-black text-lg shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Get Started — It's Free
+              {isLoading ? 'Creating account...' : 'Get Started — It\'s Free'}
             </button>
           </form>
 
@@ -93,13 +123,13 @@ const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onSwitchToLogin, onBa
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <button className="flex items-center justify-center gap-2 py-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+            <button onClick={handleGoogleSignup} type="button" className="flex items-center justify-center gap-2 py-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
               <img src="https://www.google.com/favicon.ico" className="w-4 h-4" alt="Google" />
               <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Google</span>
             </button>
             <button className="flex items-center justify-center gap-2 py-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
               <svg viewBox="0 0 384 512" className="w-4 h-4 fill-slate-900 dark:fill-white" xmlns="http://www.w3.org/2000/svg">
-                <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
+                <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
               </svg>
               <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Apple</span>
             </button>
@@ -108,7 +138,7 @@ const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onSwitchToLogin, onBa
 
         <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400 font-bold">
           Already have an account?{' '}
-          <button 
+          <button
             onClick={onSwitchToLogin}
             className="text-primary hover:underline"
           >

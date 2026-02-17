@@ -10,53 +10,50 @@ import LandingPage from './components/LandingPage';
 import { INITIAL_TASKS, NAV_ITEMS } from './constants';
 import { Task, ColumnId, TaskStatus, ColumnData, SortOption, TaskPriority } from './types';
 import confetti from 'canvas-confetti';
+import { useAuth } from './AuthContext';
 
 const App: React.FC = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    if (typeof window !== 'undefined') {
-        return localStorage.getItem('focusflow-auth') === 'true';
-    }
-    return false;
-  });
+  const { currentUser, loading, signInWithGoogle, logout } = useAuth();
+  const isLoggedIn = !!currentUser;
 
   const [tasks, setTasks] = useState<Task[]>(() => {
     if (typeof window !== 'undefined') {
-        const saved = localStorage.getItem('focusflow-tasks');
-        if (saved) {
-            try {
-                return JSON.parse(saved);
-            } catch (e) {
-                console.error("Failed to parse tasks from storage", e);
-            }
+      const saved = localStorage.getItem('focusflow-tasks');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error("Failed to parse tasks from storage", e);
         }
+      }
     }
     return INITIAL_TASKS;
   });
 
   const [columns, setColumns] = useState<ColumnData[]>(() => {
     if (typeof window !== 'undefined') {
-        const saved = localStorage.getItem('focusflow-columns');
-        if (saved) {
-            try {
-                return JSON.parse(saved);
-            } catch (e) {
-                console.error("Failed to parse columns from storage", e);
-            }
+      const saved = localStorage.getItem('focusflow-columns');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error("Failed to parse columns from storage", e);
         }
+      }
     }
     return [
-        { id: ColumnId.TODAY, title: 'Today', colorClass: 'bg-primary', sortBy: SortOption.CREATION },
-        { id: ColumnId.UPCOMING, title: 'Upcoming', colorClass: 'bg-accent', sortBy: SortOption.CREATION },
-        { id: ColumnId.COMPLETED, title: 'Completed', colorClass: 'bg-green-400', sortBy: SortOption.CREATION }
+      { id: ColumnId.TODAY, title: 'Today', colorClass: 'bg-primary', sortBy: SortOption.CREATION },
+      { id: ColumnId.UPCOMING, title: 'Upcoming', colorClass: 'bg-accent', sortBy: SortOption.CREATION },
+      { id: ColumnId.COMPLETED, title: 'Completed', colorClass: 'bg-green-400', sortBy: SortOption.CREATION }
     ];
   });
 
   const [darkMode, setDarkMode] = useState(() => {
-      if (typeof window !== 'undefined') {
-          return localStorage.getItem('focusflow-theme') === 'dark' || 
-                 (!localStorage.getItem('focusflow-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-      }
-      return false;
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('focusflow-theme') === 'dark' ||
+        (!localStorage.getItem('focusflow-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    }
+    return false;
   });
 
   const [activeNav, setActiveNav] = useState('my-day');
@@ -83,9 +80,7 @@ const App: React.FC = () => {
     }
   }, [columns]);
 
-  useEffect(() => {
-    localStorage.setItem('focusflow-auth', String(isLoggedIn));
-  }, [isLoggedIn]);
+
 
   useEffect(() => {
     if (darkMode) {
@@ -109,11 +104,11 @@ const App: React.FC = () => {
     if (taskIndex === -1) return;
 
     const [removed] = newTasks.splice(taskIndex, 1);
-    
+
     if (destination.droppableId === ColumnId.COMPLETED) {
-        removed.status = TaskStatus.COMPLETED;
+      removed.status = TaskStatus.COMPLETED;
     } else {
-        removed.status = TaskStatus.TODO;
+      removed.status = TaskStatus.TODO;
     }
     removed.columnId = destination.droppableId;
 
@@ -121,7 +116,7 @@ const App: React.FC = () => {
     setTasks(newTasks);
 
     if (destination.droppableId === ColumnId.COMPLETED && source.droppableId !== ColumnId.COMPLETED) {
-        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#FF5F5F', '#FFD700', '#4ade80'] });
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#FF5F5F', '#FFD700', '#4ade80'] });
     }
   };
 
@@ -131,7 +126,7 @@ const App: React.FC = () => {
       title: data,
       status: TaskStatus.TODO,
       isImportant: false,
-      columnId: ColumnId.TODAY,
+      columnId: (dueDate && !dueDate.toLowerCase().includes('today')) ? ColumnId.UPCOMING : ColumnId.TODAY,
       dueDate: dueDate,
       hasNotification: hasNotification,
       priority: TaskPriority.MEDIUM
@@ -154,14 +149,14 @@ const App: React.FC = () => {
 
   const addColumn = () => {
     if (!newColumnTitle.trim()) {
-        setIsAddingColumn(false);
-        return;
+      setIsAddingColumn(false);
+      return;
     }
-    const newCol: ColumnData = { 
-      id: `custom-${Date.now()}`, 
-      title: newColumnTitle.trim(), 
-      colorClass: 'bg-slate-400', 
-      sortBy: SortOption.CREATION 
+    const newCol: ColumnData = {
+      id: `custom-${Date.now()}`,
+      title: newColumnTitle.trim(),
+      colorClass: 'bg-slate-400',
+      sortBy: SortOption.CREATION
     };
     setColumns(prev => [...prev, newCol]);
     setNewColumnTitle('');
@@ -171,7 +166,7 @@ const App: React.FC = () => {
   const deleteColumn = (id: string) => {
     // Prevent deletion of system columns
     if (id === ColumnId.TODAY || id === ColumnId.UPCOMING || id === ColumnId.COMPLETED) return;
-    
+
     const confirmMessage = "Are you sure you want to delete this column? All tasks inside will be permanently removed.";
     if (window.confirm(confirmMessage)) {
       setColumns(prev => prev.filter(c => c.id !== id));
@@ -189,7 +184,7 @@ const App: React.FC = () => {
     const newColumnId = newStatus === TaskStatus.COMPLETED ? ColumnId.COMPLETED : ColumnId.TODAY;
     updateTask({ ...task, status: newStatus, columnId: newColumnId });
     if (newStatus === TaskStatus.COMPLETED) {
-        confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }, colors: ['#FF5F5F', '#FFD700', '#4ade80'] });
+      confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }, colors: ['#FF5F5F', '#FFD700', '#4ade80'] });
     }
   };
 
@@ -210,13 +205,21 @@ const App: React.FC = () => {
     setColumns(prev => prev.map(c => c.id === colId ? { ...c, sortBy: option } : c));
   };
 
-  if (!isLoggedIn) return <LandingPage onLogin={() => setIsLoggedIn(true)} darkMode={darkMode} onToggleDarkMode={toggleDarkMode} />;
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-white dark:bg-slate-950">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isLoggedIn) return <LandingPage onLogin={signInWithGoogle} darkMode={darkMode} onToggleDarkMode={toggleDarkMode} />;
 
   return (
     <div className="flex h-screen bg-background-light dark:bg-slate-950 overflow-hidden transition-colors duration-200">
-      <Sidebar 
+      <Sidebar
         darkMode={darkMode} toggleDarkMode={toggleDarkMode} activeNav={activeNav} setActiveNav={setActiveNav}
-        isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} tasks={tasks} onLogout={() => setIsLoggedIn(false)}
+        isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} tasks={tasks} onLogout={logout}
         onAddTask={addTask}
       />
 
@@ -227,29 +230,29 @@ const App: React.FC = () => {
               <span className="material-symbols-outlined text-slate-600 dark:text-slate-400">menu</span>
             </button>
             <div className="truncate">
-                <h2 className="text-base sm:text-xl font-black text-slate-800 dark:text-white tracking-tight truncate">
-                    {NAV_ITEMS.find(n => n.id === activeNav)?.label || 'Dashboard'}
-                </h2>
-                <p className="text-[8px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">
-                    {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                </p>
+              <h2 className="text-base sm:text-xl font-black text-slate-800 dark:text-white tracking-tight truncate">
+                {NAV_ITEMS.find(n => n.id === activeNav)?.label || 'Dashboard'}
+              </h2>
+              <p className="text-[8px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">
+                {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              </p>
             </div>
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2">
-             <div className="flex bg-slate-100 dark:bg-slate-800 p-0.5 sm:p-1 rounded-lg sm:rounded-xl border border-slate-200 dark:border-slate-700">
-                <button onClick={() => setAdventureMode(false)} className={`p-1.5 rounded-md sm:rounded-lg flex items-center gap-1 text-[10px] sm:text-xs font-bold transition-all ${!adventureMode ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-slate-400'}`}>
-                    <span className="material-symbols-outlined !text-[16px] sm:!text-[18px]">grid_view</span>
-                    <span className="hidden xs:inline">Board</span>
-                </button>
-                <button onClick={() => setAdventureMode(true)} className={`p-1.5 rounded-md sm:rounded-lg flex items-center gap-1 text-[10px] sm:text-xs font-bold transition-all ${adventureMode ? 'bg-white dark:bg-slate-700 text-accent shadow-sm' : 'text-slate-400'}`}>
-                    <span className="material-symbols-outlined !text-[16px] sm:!text-[18px]">map</span>
-                    <span className="hidden xs:inline">Adventure</span>
-                </button>
-             </div>
-             <button onClick={() => setViewMode(viewMode === 'board' ? 'table' : 'board')} className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-primary ${adventureMode ? 'opacity-50' : ''}`} disabled={adventureMode}>
-                <span className="material-symbols-outlined !text-[18px] sm:!text-[20px]">{viewMode === 'board' ? 'list' : 'dashboard'}</span>
-             </button>
+            <div className="flex bg-slate-100 dark:bg-slate-800 p-0.5 sm:p-1 rounded-lg sm:rounded-xl border border-slate-200 dark:border-slate-700">
+              <button onClick={() => setAdventureMode(false)} className={`p-1.5 rounded-md sm:rounded-lg flex items-center gap-1 text-[10px] sm:text-xs font-bold transition-all ${!adventureMode ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-slate-400'}`}>
+                <span className="material-symbols-outlined !text-[16px] sm:!text-[18px]">grid_view</span>
+                <span className="hidden xs:inline">Board</span>
+              </button>
+              <button onClick={() => setAdventureMode(true)} className={`p-1.5 rounded-md sm:rounded-lg flex items-center gap-1 text-[10px] sm:text-xs font-bold transition-all ${adventureMode ? 'bg-white dark:bg-slate-700 text-accent shadow-sm' : 'text-slate-400'}`}>
+                <span className="material-symbols-outlined !text-[16px] sm:!text-[18px]">map</span>
+                <span className="hidden xs:inline">Adventure</span>
+              </button>
+            </div>
+            <button onClick={() => setViewMode(viewMode === 'board' ? 'table' : 'board')} className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-primary ${adventureMode ? 'opacity-50' : ''}`} disabled={adventureMode}>
+              <span className="material-symbols-outlined !text-[18px] sm:!text-[20px]">{viewMode === 'board' ? 'list' : 'dashboard'}</span>
+            </button>
           </div>
         </header>
 
@@ -272,18 +275,18 @@ const App: React.FC = () => {
 
                 <div className={`${viewMode === 'board' ? 'board-column shrink-0' : 'w-full'} flex flex-col`}>
                   {!isAddingColumn ? (
-                      <button onClick={() => setIsAddingColumn(true)} className={`w-full ${viewMode === 'board' ? 'h-24 sm:h-32' : 'h-16'} border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-center gap-2 text-slate-400 hover:text-primary transition-all group shrink-0`}>
-                          <span className="material-symbols-outlined !text-xl sm:!text-2xl transition-transform group-hover:scale-110">add_circle</span>
-                          <span className="text-[10px] font-black uppercase tracking-widest">Add Column</span>
-                      </button>
+                    <button onClick={() => setIsAddingColumn(true)} className={`w-full ${viewMode === 'board' ? 'h-24 sm:h-32' : 'h-16'} border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-center gap-2 text-slate-400 hover:text-primary transition-all group shrink-0`}>
+                      <span className="material-symbols-outlined !text-xl sm:!text-2xl transition-transform group-hover:scale-110">add_circle</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest">Add Column</span>
+                    </button>
                   ) : (
-                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 sm:p-4 rounded-2xl shadow-xl shrink-0">
-                           <input autoFocus value={newColumnTitle} onChange={(e) => setNewColumnTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addColumn()} onBlur={addColumn} className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl py-2 px-3 text-sm font-bold placeholder-slate-400 mb-2" placeholder="Title..." />
-                           <div className="flex gap-2">
-                              <button onClick={addColumn} className="flex-1 py-1.5 bg-primary text-white rounded-lg text-[10px] font-bold">Add</button>
-                              <button onClick={() => setIsAddingColumn(false)} className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg text-[10px] font-bold">Cancel</button>
-                           </div>
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 sm:p-4 rounded-2xl shadow-xl shrink-0">
+                      <input autoFocus value={newColumnTitle} onChange={(e) => setNewColumnTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addColumn()} onBlur={addColumn} className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl py-2 px-3 text-sm font-bold placeholder-slate-400 mb-2" placeholder="Title..." />
+                      <div className="flex gap-2">
+                        <button onClick={addColumn} className="flex-1 py-1.5 bg-primary text-white rounded-lg text-[10px] font-bold">Add</button>
+                        <button onClick={() => setIsAddingColumn(false)} className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg text-[10px] font-bold">Cancel</button>
                       </div>
+                    </div>
                   )}
                 </div>
               </div>
