@@ -30,13 +30,19 @@ FocusFlow is a minimalist, intelligent task manager designed to help you organiz
 *   **Pomodoro Timer**: Stay in the zone with a built-in focus timer. Switch between Focus and Break modes to maintain peak productivity without burnout.
 *   **Daily Goal Tracker**: A visual progress bar in the sidebar keeps you motivated by showing how close you are to completing your daily objectives.
 
-### 4. **Task Mastery**
-*   **Rich Task Details**: Manage categories, priorities (Low, Medium, High), and notifications.
-*   **Custom Calendar**: A powerful date picker with quick presets (Today, Tomorrow, Next Week) and a full monthly view.
-*   **Smart Reassignment**: Changing a task's due date automatically moves it to the appropriate column (Today/Upcoming).
-*   **Persistence**: Your data is saved locally in your browser, so you never lose track of your progress.
+### 4. **Notification System**
+*   **Real-time Toasts**: Get instant feedback with toast notifications for task completions, deletions, and important updates.
+*   **Actionable Notifications**: "Undo" task completions directly from the notification toast or dropdown.
+*   **Smart Grouping**: Notifications are organized by time (Today, Yesterday, Earlier) for a clean, professional look.
+*   **Persistence**: Notifications are saved to local storage, ensuring you never miss an update.
 
-### 5. **Polished Experience**
+### 5. **Authentication & Profile**
+*   **Google Login**: Secure and fast authentication using Firebase Google Auth.
+*   **Email/Password**: Traditional login support with secure password management.
+*   **Comprehensive Profile**: Track your professional role, bio, and daily task goals.
+*   **Mobile-Optimized Experience**: The entire notification and profile system is designed to look stunning and work perfectly on mobile devices with fixed overlays and soft backdrops.
+
+### 6. **Polished Experience**
 *   **Dark Mode**: A beautiful, eye-strain-reducing dark theme.
 *   **Confetti Celebrations**: Get a hit of dopamine with a confetti burst every time you complete a task.
 *   **Search & Sort**: Find what you need instantly and sort columns by Priority, Due Date, or Title.
@@ -44,17 +50,19 @@ FocusFlow is a minimalist, intelligent task manager designed to help you organiz
 ## 🛠 Tech Stack
 
 *   **Frontend**: React (Functional Components, Hooks)
+*   **Backend/Auth**: Firebase (Authentication, Analytics)
 *   **Styling**: Tailwind CSS (with custom theme extensions)
 *   **AI Integration**: Google Gemini API (@google/genai)
-*   **Interactions**: @hello-pangea/dnd (Drag and Drop), Canvas Confetti
+*   **Interactions**: @hello-pangea/dnd (Drag and Drop), Canvas Confetti, GSAP (Animations)
 *   **Fonts/Icons**: Inter, Google Material Symbols
 
 ## 🚀 Getting Started
 
-1.  **Add a Task**: Use the "Add Task" bar at the bottom. Try using the ✨ icon for AI-assisted parsing!
-2.  **Organize**: Drag tasks between "Today" and "Upcoming" to plan your week.
-3.  **Deep Work**: Click the timer icon in the bottom right to start a Pomodoro session.
-4.  **Explore**: Switch to **Map View** to see your tasks as a path to success.
+1.  **Sign In**: Connect your account using Google for a personalized experience.
+2.  **Add a Task**: Use the "Add Task" bar at the bottom. Try using the ✨ icon for AI-assisted parsing!
+3.  **Organize**: Drag tasks between columns to plan your workflow.
+4.  **Stay Notified**: Watch for real-time toasts and manage your history in the notification dropdown.
+5.  **Explore**: Switch to **Adventure View** to see your tasks as a path to success.
 
 ---
 
