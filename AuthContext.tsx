@@ -90,8 +90,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName });
-      // Force refresh user state
-      setCurrentUser({ ...userCredential.user, displayName } as User);
+      // Force refresh user state from the actual auth instance to keep methods intact
+      setCurrentUser(auth.currentUser);
     } catch (error) {
       console.error("Error signing up with email", error);
       throw error;
@@ -115,9 +115,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!currentUser) throw new Error("No user logged in");
     try {
       await updateProfile(currentUser, { displayName, photoURL });
-      // Force refresh user state
-      const updatedUser = { ...currentUser, displayName, photoURL };
-      setCurrentUser(updatedUser as User);
+      // Reload the user object to get the latest data from Firebase
+      await currentUser.reload();
+      // Force refresh user state from the actual auth instance
+      setCurrentUser(auth.currentUser);
     } catch (error) {
       console.error("Error updating profile", error);
       throw error;
@@ -133,7 +134,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const credential = EmailAuthProvider.credential(currentUser.email, password);
       await linkWithCredential(currentUser, credential);
       // Force refresh user state to update providerData
-      setCurrentUser({ ...auth.currentUser! } as User);
+      setCurrentUser(auth.currentUser);
     } catch (error) {
       console.error("Error linking password", error);
       throw error;
