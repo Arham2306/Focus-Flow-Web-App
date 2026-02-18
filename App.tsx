@@ -11,7 +11,7 @@ import ProfileView from './components/ProfileView';
 import EditProfileView from './components/EditProfileView';
 import SetPasswordView from './components/SetPasswordView';
 import { INITIAL_TASKS, NAV_ITEMS } from './constants';
-import { Task, ColumnId, TaskStatus, ColumnData, SortOption, TaskPriority } from './types';
+import { Task, ColumnId, TaskStatus, ColumnData, SortOption, TaskPriority, AppNotification, NotificationType } from './types';
 import confetti from 'canvas-confetti';
 import { useAuth } from './AuthContext';
 
@@ -70,7 +70,32 @@ const App: React.FC = () => {
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [notifications, setNotifications] = useState<AppNotification[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('focusflow-notifications');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error("Failed to parse notifications", e);
+        }
+      }
+    }
+    return [
+      {
+        id: 'welcome',
+        title: 'Welcome to FocusFlow!',
+        message: 'Start by adding your first task and managing your day.',
+        type: NotificationType.INFO,
+        timestamp: new Date().toISOString(),
+        isRead: false
+      }
+    ];
+  });
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [activeToasts, setActiveToasts] = useState<AppNotification[]>([]);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
+  const notificationDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     try {
@@ -100,12 +125,23 @@ const App: React.FC = () => {
     }
   }, [darkMode]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('focusflow-notifications', JSON.stringify(notifications));
+    } catch (e) {
+      console.error("Failed to save notifications", e);
+    }
+  }, [notifications]);
+
   const toggleDarkMode = () => setDarkMode(!darkMode);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
         setProfileDropdownOpen(false);
+      }
+      if (notificationDropdownRef.current && !notificationDropdownRef.current.contains(event.target as Node)) {
+        setNotificationsOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -137,8 +173,15 @@ const App: React.FC = () => {
 
     if (destination.droppableId === ColumnId.COMPLETED && source.droppableId !== ColumnId.COMPLETED) {
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#FF5F5F', '#FFD700', '#4ade80'] });
+      addNotification(
+        'Task Completed!',
+        `Great job! You've finished: ${removed.title}`,
+        NotificationType.SUCCESS,
+        { label: 'Undo', onClick: 'undo-complete', payload: { taskId: removed.id } }
+      );
     }
   };
+
 
   const addTask = (data: string | Partial<Task>, dueDate?: string, hasNotification?: boolean) => {
     const newTask: Task = typeof data === 'string' ? {
@@ -194,29 +237,144 @@ const App: React.FC = () => {
     }
   };
 
-  const updateTask = (updatedTask: Task) => setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
-  const deleteTask = (taskId: string) => { setTasks(prev => prev.filter(t => t.id !== taskId)); setSelectedTask(null); };
+  const updateTask = (updatedTask: Task) => {
+    setTasks(prev => {
+      const oldTask = prev.find(t => t.id === updatedTask.id);
+      if (oldTask) {
+        // Detect Completion Transition
+        if (updatedTask.status === TaskStatus.COMPLETED && oldTask.status !== TaskStatus.COMPLETED) {
+          confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }, colors: ['#FF5F5F', '#FFD700', '#4ade80'] });
+          addNotification(
+            'Task Completed!',
+            `Great job! You've finished: ${updatedTask.title}`,
+            NotificationType.SUCCESS,
+            { label: 'Undo', onClick: 'undo-complete', payload: { taskId: updatedTask.id } }
+          );
+          updatedTask.completedDate = updatedTask.completedDate || new Date().toISOString();
+          updatedTask.columnId = ColumnId.COMPLETED;
+        }
+        // Detect Un-completion Transition (Undo)
+        else if (updatedTask.status !== TaskStatus.COMPLETED && oldTask.status === TaskStatus.COMPLETED) {
+          delete updatedTask.completedDate;
+          if (updatedTask.columnId === ColumnId.COMPLETED) {
+            updatedTask.columnId = ColumnId.TODAY;
+          }
+        }
+      }
+      return prev.map(t => t.id === updatedTask.id ? updatedTask : t);
+    });
+  };
+
+  const deleteTask = (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    setTasks(prev => prev.filter(t => t.id !== taskId));
+    setSelectedTask(null);
+    if (task) {
+      addNotification('Task Deleted', `"${task.title}" has been removed.`, NotificationType.WARNING);
+    }
+  };
+
+  const addNotification = (title: string, message: string, type: NotificationType = NotificationType.INFO, action?: AppNotification['action']) => {
+    const newNotification: AppNotification = {
+      id: `notif-${Date.now()}`,
+      title,
+      message,
+      type,
+      timestamp: new Date().toISOString(),
+      isRead: false,
+      action
+    };
+    setNotifications(prev => [newNotification, ...prev]);
+
+    // Add to toasts
+    setActiveToasts(prev => [...prev, newNotification]);
+    setTimeout(() => {
+      setActiveToasts(prev => prev.filter(t => t.id !== newNotification.id));
+    }, 5000);
+  };
+
+  const markNotificationAsRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  };
+
+  const handleNotificationAction = (notif: AppNotification) => {
+    if (!notif.action) return;
+
+    switch (notif.action.onClick) {
+      case 'undo-complete':
+        const taskId = notif.action.payload.taskId;
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+          updateTask({
+            ...task,
+            status: TaskStatus.TODO,
+            columnId: ColumnId.TODAY,
+            completedDate: undefined
+          });
+          addNotification('Undone', `Task "${task.title}" moved back to Today.`, NotificationType.INFO);
+        }
+        break;
+      // Add more actions here
+    }
+
+    markNotificationAsRead(notif.id);
+    setActiveToasts(prev => prev.filter(t => t.id !== notif.id));
+  };
+
+  const markAllNotificationsAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  };
+
+  const clearNotifications = () => {
+    setNotifications([]);
+  };
+
+  const groupedNotifications = useMemo(() => {
+    const groups: { [key: string]: AppNotification[] } = {
+      'Today': [],
+      'Yesterday': [],
+      'Earlier': []
+    };
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    notifications.forEach(notif => {
+      const date = new Date(notif.timestamp);
+      if (date >= today) groups['Today'].push(notif);
+      else if (date >= yesterday) groups['Yesterday'].push(notif);
+      else groups['Earlier'].push(notif);
+    });
+
+    return Object.entries(groups).filter(([_, items]) => items.length > 0);
+  }, [notifications]);
 
   const toggleStatus = (id: string) => {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
-    const newStatus = task.status === TaskStatus.COMPLETED ? TaskStatus.TODO : TaskStatus.COMPLETED;
-    const isCompleted = newStatus === TaskStatus.COMPLETED;
-    const newColumnId = isCompleted ? ColumnId.COMPLETED : ColumnId.TODAY;
+    const isCompleted = task.status === TaskStatus.COMPLETED;
+    const newStatus = isCompleted ? TaskStatus.TODO : TaskStatus.COMPLETED;
+
     updateTask({
       ...task,
       status: newStatus,
-      columnId: newColumnId,
-      completedDate: isCompleted ? new Date().toISOString() : undefined
+      // columnId and completedDate will be handled by updateTask's transition logic
     });
-    if (newStatus === TaskStatus.COMPLETED) {
-      confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }, colors: ['#FF5F5F', '#FFD700', '#4ade80'] });
-    }
   };
+
+
 
   const toggleImportant = (id: string) => {
     const task = tasks.find(t => t.id === id);
-    if (task) updateTask({ ...task, isImportant: !task.isImportant });
+    if (task) {
+      const newImportant = !task.isImportant;
+      updateTask({ ...task, isImportant: newImportant });
+      if (newImportant) {
+        addNotification('Priority Set', `"${task.title}" has been marked as important.`, NotificationType.INFO);
+      }
+    }
   };
 
   const filteredTasks = useMemo(() => {
@@ -291,6 +449,111 @@ const App: React.FC = () => {
             <button onClick={() => setViewMode(viewMode === 'board' ? 'table' : 'board')} className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-primary ${adventureMode ? 'opacity-50' : ''}`} disabled={adventureMode}>
               <span className="material-symbols-outlined !text-[18px] sm:!text-[20px]">{viewMode === 'board' ? 'list' : 'dashboard'}</span>
             </button>
+
+            {/* Notifications Dropdown */}
+            <div className="relative flex items-center" ref={notificationDropdownRef}>
+              <button
+                onClick={() => setNotificationsOpen(!notificationsOpen)}
+                className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border border-slate-200 dark:border-slate-700 transition-all relative ${notificationsOpen ? 'bg-primary/10 border-primary text-primary' : 'text-slate-400 hover:text-primary'}`}
+              >
+                <span className="material-symbols-outlined !text-[18px] sm:!text-[20px]">notifications</span>
+                {notifications.some(n => !n.isRead) && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse"></span>
+                )}
+              </button>
+
+              {notificationsOpen && (
+                <>
+                  {/* Backdrop for mobile */}
+                  <div
+                    className="fixed inset-0 bg-slate-900/20 backdrop-blur-[2px] z-40 lg:hidden animate-in fade-in duration-300"
+                    onClick={() => setNotificationsOpen(false)}
+                  />
+
+                  <div className="fixed sm:absolute right-4 sm:right-0 top-[70px] sm:top-full mt-2 w-[calc(100vw-32px)] sm:w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] border border-slate-100 dark:border-slate-800 overflow-hidden animate-in slide-in-from-top-2 zoom-in-95 duration-200 z-50">
+
+                    <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                      <div>
+                        <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">Notifications</h3>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
+                          {notifications.filter(n => !n.isRead).length} Unread
+                        </p>
+                      </div>
+                      {notifications.length > 0 && (
+                        <div className="flex gap-2">
+                          <button onClick={markAllNotificationsAsRead} className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline px-2 py-1">Mark all read</button>
+                          <button onClick={clearNotifications} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-500 transition-colors px-2 py-1">Clear</button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                      {notifications.length > 0 ? (
+                        <div className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                          {groupedNotifications.map(([groupName, items]) => (
+                            <div key={groupName}>
+                              <div className="px-4 py-2 bg-slate-50/50 dark:bg-slate-800/30 text-[8px] font-black text-slate-400 uppercase tracking-widest border-y border-slate-100/50 dark:border-slate-800/50">
+                                {groupName}
+                              </div>
+                              {items.map((notif) => (
+                                <div
+                                  key={notif.id}
+                                  className={`p-4 flex gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group ${!notif.isRead ? 'bg-primary/5 dark:bg-primary/10' : ''}`}
+                                >
+                                  <div
+                                    onClick={() => markNotificationAsRead(notif.id)}
+                                    className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 cursor-pointer ${notif.type === NotificationType.SUCCESS ? 'bg-green-100 text-green-600 dark:bg-green-900/30' :
+                                      notif.type === NotificationType.WARNING ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30' :
+                                        'bg-primary/10 text-primary'
+                                      }`}
+                                  >
+                                    <span className="material-symbols-outlined !text-[18px]">
+                                      {notif.type === NotificationType.SUCCESS ? 'check_circle' :
+                                        notif.type === NotificationType.WARNING ? 'warning' : 'info'}
+                                    </span>
+                                  </div>
+                                  <div className="flex-1 min-w-0" onClick={() => markNotificationAsRead(notif.id)}>
+                                    <div className="flex items-center justify-between gap-2">
+                                      <h4 className={`text-xs font-bold truncate ${!notif.isRead ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
+                                        {notif.title}
+                                      </h4>
+                                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter whitespace-nowrap">
+                                        {new Date(notif.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                      </span>
+                                    </div>
+                                    <p className={`text-[10px] mt-0.5 line-clamp-2 leading-relaxed ${!notif.isRead ? 'text-slate-600 dark:text-slate-300' : 'text-slate-400 dark:text-slate-500'}`}>
+                                      {notif.message}
+                                    </p>
+                                    {notif.action && (
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); handleNotificationAction(notif); }}
+                                        className="mt-2 px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-[9px] font-black uppercase tracking-widest text-primary hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm"
+                                      >
+                                        {notif.action.label}
+                                      </button>
+                                    )}
+                                  </div>
+                                  {!notif.isRead && (
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-2"></div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-8 text-center">
+                          <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                            <span className="material-symbols-outlined text-slate-300 dark:text-slate-600 !text-2xl">notifications_off</span>
+                          </div>
+                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No notifications yet</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
 
             {/* Profile Avatar with Dropdown */}
             <div className="relative ml-1 flex items-center" ref={profileDropdownRef}>
@@ -407,6 +670,44 @@ const App: React.FC = () => {
         {selectedTask && (
           <TaskModal task={selectedTask} columns={columns} onClose={() => setSelectedTask(null)} onUpdate={updateTask} onDelete={deleteTask} />
         )}
+
+        {/* Toast Overlay */}
+        <div className="fixed bottom-24 right-4 sm:right-8 flex flex-col gap-3 z-[60] pointer-events-none">
+          {activeToasts.map((toast) => (
+            <div
+              key={toast.id}
+              className="w-72 sm:w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.4)] border border-slate-100 dark:border-slate-800 p-4 flex gap-3 animate-in slide-in-from-right-full duration-300 pointer-events-auto group"
+            >
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${toast.type === NotificationType.SUCCESS ? 'bg-green-100 text-green-600 dark:bg-green-900/30' :
+                toast.type === NotificationType.WARNING ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30' :
+                  'bg-primary/10 text-primary'
+                }`}>
+                <span className="material-symbols-outlined !text-[20px]">
+                  {toast.type === NotificationType.SUCCESS ? 'check_circle' :
+                    toast.type === NotificationType.WARNING ? 'warning' : 'info'}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">{toast.title}</h4>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-bold">{toast.message}</p>
+                {toast.action && (
+                  <button
+                    onClick={() => handleNotificationAction(toast)}
+                    className="mt-2 px-3 py-1 bg-primary text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-primary-dark transition-all shadow-md shadow-primary/20"
+                  >
+                    {toast.action.label}
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={() => setActiveToasts(prev => prev.filter(t => t.id !== toast.id))}
+                className="opacity-0 group-hover:opacity-100 p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"
+              >
+                <span className="material-symbols-outlined !text-[16px] text-slate-400">close</span>
+              </button>
+            </div>
+          ))}
+        </div>
       </main>
     </div>
   );

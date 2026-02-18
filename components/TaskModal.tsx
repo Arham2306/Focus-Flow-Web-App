@@ -202,7 +202,18 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, columns, onClose, onUpdate,
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg m-4 overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col transition-colors duration-200">
         <div className="p-5 sm:p-6 space-y-5 sm:space-y-6 overflow-y-auto custom-scrollbar">
           <div className="flex items-start gap-4">
-            <button onClick={() => setStatus(status === TaskStatus.COMPLETED ? TaskStatus.TODO : TaskStatus.COMPLETED)} className={`mt-1 h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${status === TaskStatus.COMPLETED ? 'bg-primary border-primary text-white' : 'border-slate-300 dark:border-slate-500 text-transparent hover:border-primary'}`}><span className="material-symbols-outlined !text-sm font-bold">check</span></button>
+            <button
+              onClick={() => {
+                const newStatus = status === TaskStatus.COMPLETED ? TaskStatus.TODO : TaskStatus.COMPLETED;
+                setStatus(newStatus);
+                if (newStatus === TaskStatus.COMPLETED) setColumnId(ColumnId.COMPLETED);
+                else if (columnId === ColumnId.COMPLETED) setColumnId(ColumnId.TODAY);
+              }}
+              className={`mt-1 h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${status === TaskStatus.COMPLETED ? 'bg-primary border-primary text-white' : 'border-slate-300 dark:border-slate-500 text-transparent hover:border-primary'}`}
+            >
+              <span className="material-symbols-outlined !text-sm font-bold">check</span>
+            </button>
+
             <div className="flex-1">
               <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full text-lg sm:text-xl font-bold text-slate-800 dark:text-white border-none p-0 focus:ring-0 placeholder-slate-300 dark:placeholder-slate-600 bg-transparent" placeholder="Task title" autoFocus />
             </div>
@@ -220,8 +231,20 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, columns, onClose, onUpdate,
 
             <div className="flex flex-col gap-1">
               <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">List</label>
-              <select value={columnId} onChange={(e) => setColumnId(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 focus:ring-primary/20 focus:border-primary transition-all">{columns.map(col => <option key={col.id} value={col.id}>{col.title}</option>)}</select>
+              <select
+                value={columnId}
+                onChange={(e) => {
+                  const newColId = e.target.value;
+                  setColumnId(newColId);
+                  if (newColId === ColumnId.COMPLETED) setStatus(TaskStatus.COMPLETED);
+                  else if (status === TaskStatus.COMPLETED) setStatus(TaskStatus.TODO);
+                }}
+                className="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 focus:ring-primary/20 focus:border-primary transition-all"
+              >
+                {columns.map(col => <option key={col.id} value={col.id}>{col.title}</option>)}
+              </select>
             </div>
+
 
             <div className="flex flex-col gap-1">
               <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Priority</label>

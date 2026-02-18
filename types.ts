@@ -50,3 +50,24 @@ export interface Task {
   priority?: TaskPriority;
   completedDate?: string; // ISO string
 }
+
+export enum NotificationType {
+  INFO = 'INFO',
+  SUCCESS = 'SUCCESS',
+  WARNING = 'WARNING'
+}
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  timestamp: string;
+  isRead: boolean;
+  link?: string;
+  action?: {
+    label: string;
+    onClick: string; // Action identifier
+    payload?: any;
+  };
+}
