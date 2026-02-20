@@ -172,7 +172,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, columns, onClose, onUpdate,
     }
 
     return (
-      <div className="absolute top-full left-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 p-3 z-50 w-64 animate-in zoom-in-95 duration-200">
+      <div className="absolute top-full left-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 p-3 z-50 w-[min(16rem,calc(100vw-3rem))] sm:w-64 animate-in zoom-in-95 duration-200">
         <div className="flex flex-col gap-1 mb-2 border-b border-slate-100 dark:border-slate-700 pb-2">
           <button onClick={() => handleDateSelect(new Date())} className="text-left px-2 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-primary flex items-center gap-2">
             <span className="material-symbols-outlined !text-sm text-green-500">today</span> Today
@@ -260,7 +260,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, columns, onClose, onUpdate,
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div className="flex flex-col gap-1" ref={calendarRef}>
                 <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Due Date</label>
                 <div className="relative">

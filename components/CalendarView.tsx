@@ -80,12 +80,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onTaskClick, onToggl
 
   return (
     <div className="flex-1 flex flex-col h-full bg-white dark:bg-slate-900 overflow-hidden animate-in fade-in duration-500">
-      <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h2 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">
+      <div className="p-3 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row gap-3 sm:gap-0 sm:items-center sm:justify-between">
+        <div className="flex w-full items-center justify-between sm:w-auto sm:justify-start gap-2 sm:gap-4">
+          <h2 className="text-lg sm:text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">
             {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </h2>
-          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+          <div className="flex shrink-0 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
             <button onClick={prevMonth} className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all text-slate-600 dark:text-slate-400">
               <span className="material-symbols-outlined !text-[20px]">chevron_left</span>
             </button>
@@ -98,10 +98,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onTaskClick, onToggl
       </div>
 
       <div className="flex-1 overflow-auto custom-scrollbar">
-        <div className="min-w-[700px] h-full flex flex-col pb-40">
+        <div className="min-w-[560px] sm:min-w-[700px] h-full flex flex-col pb-32 sm:pb-40">
           <div className="grid grid-cols-7 border-b border-slate-100 dark:border-slate-800">
             {weekDays.map(day => (
-              <div key={day} className="py-3 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">
+              <div key={day} className="py-2 sm:py-3 text-center text-[9px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.14em] sm:tracking-[0.2em]">
                 {day}
               </div>
             ))}
@@ -116,12 +116,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onTaskClick, onToggl
               return (
                 <div
                   key={idx}
-                  className={`min-h-[120px] p-2 border-r border-b border-slate-50 dark:border-slate-800/50 flex flex-col gap-1 transition-colors
+                  className={`min-h-[90px] sm:min-h-[120px] p-1.5 sm:p-2 border-r border-b border-slate-50 dark:border-slate-800/50 flex flex-col gap-1 transition-colors
                     ${!day.isCurrentMonth ? 'bg-slate-50/30 dark:bg-slate-900/40 text-slate-300 dark:text-slate-700' : 'hover:bg-slate-50 dark:hover:bg-slate-800/30'}
                   `}
                 >
                   <div className="flex justify-end">
-                    <span className={`text-xs font-black w-6 h-6 flex items-center justify-center rounded-full
+                    <span className={`text-[10px] sm:text-xs font-black w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full
                       ${isToday ? 'bg-primary text-white' : day.isCurrentMonth ? 'text-slate-600 dark:text-slate-400' : 'text-inherit'}
                     `}>
                       {day.date.getDate()}
@@ -133,12 +133,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onTaskClick, onToggl
                       <button
                         key={task.id}
                         onClick={() => onTaskClick(task)}
-                        className={`group flex items-center gap-1.5 p-1.5 rounded-lg text-left transition-all hover:scale-[1.02] active:scale-[0.98] border border-transparent
+                        className={`group flex items-center gap-1 p-1 sm:p-1.5 rounded-md sm:rounded-lg text-left transition-all hover:scale-[1.02] active:scale-[0.98] border border-transparent
                           ${task.status === 'COMPLETED' ? 'bg-slate-50 dark:bg-slate-800/50 opacity-60' : 'bg-white dark:bg-slate-800 shadow-sm hover:border-primary/30'}
                         `}
                       >
                         <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${task.status === 'COMPLETED' ? 'bg-slate-300' : task.isImportant ? 'bg-red-500' : 'bg-primary'}`}></div>
-                        <span className={`text-[10px] font-bold truncate flex-1 ${task.status === 'COMPLETED' ? 'line-through text-slate-400' : 'text-slate-700 dark:text-slate-200'}`}>
+                        <span className={`text-[9px] sm:text-[10px] font-bold truncate flex-1 ${task.status === 'COMPLETED' ? 'line-through text-slate-400' : 'text-slate-700 dark:text-slate-200'}`}>
                           {task.title}
                         </span>
                       </button>
@@ -155,3 +155,4 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onTaskClick, onToggl
 };
 
 export default CalendarView;
+
