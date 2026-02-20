@@ -50,6 +50,8 @@ export interface Task {
   priority?: TaskPriority;
   completedDate?: string; // ISO string
   previousColumnId?: string;
+  dueDateISO?: string; // Original full timestamp
+  dueDateKey?: string; // YYYY-MM-DD for stable calendar mapping
 }
 
 export enum NotificationType {

@@ -6,6 +6,7 @@ import AddTaskBar from './components/AddTaskBar';
 import TaskModal from './components/TaskModal';
 import PomodoroTimer from './components/PomodoroTimer';
 import AdventureView from './components/AdventureView';
+import CalendarView from './components/CalendarView';
 import LandingPage from './components/LandingPage';
 import ProfileView from './components/ProfileView';
 import EditProfileView from './components/EditProfileView';
@@ -185,7 +186,7 @@ const App: React.FC = () => {
   };
 
 
-  const addTask = (data: string | Partial<Task>, dueDate?: string, hasNotification?: boolean) => {
+  const addTask = (data: string | Partial<Task>, dueDate?: string, hasNotification?: boolean, dueDateKey?: string) => {
     const newTask: Task = typeof data === 'string' ? {
       id: `task-${Date.now()}`,
       title: data,
@@ -193,6 +194,7 @@ const App: React.FC = () => {
       isImportant: false,
       columnId: (dueDate && !dueDate.toLowerCase().includes('today')) ? ColumnId.UPCOMING : ColumnId.TODAY,
       dueDate: dueDate,
+      dueDateKey: dueDateKey,
       hasNotification: hasNotification,
       priority: TaskPriority.MEDIUM
     } : {
@@ -202,6 +204,7 @@ const App: React.FC = () => {
       isImportant: data.isImportant || false,
       columnId: (data.dueDate && data.dueDate.toLowerCase().includes('today')) ? ColumnId.TODAY : ColumnId.UPCOMING,
       dueDate: data.dueDate,
+      dueDateKey: data.dueDateKey || dueDateKey,
       description: data.description,
       priority: data.priority || TaskPriority.MEDIUM,
       category: data.category,
@@ -633,6 +636,8 @@ const App: React.FC = () => {
             />
           ) : activeNav === 'edit-profile' ? (
             <EditProfileView onBack={() => setActiveNav('profile')} />
+          ) : activeNav === 'calendar' ? (
+            <CalendarView tasks={tasks} onTaskClick={setSelectedTask} onToggleStatus={toggleStatus} />
           ) : adventureMode ? (
             <AdventureView tasks={filteredTasks} onTaskClick={setSelectedTask} onToggleStatus={toggleStatus} />
           ) : (

@@ -4,7 +4,7 @@ import { Task, Subtask } from '../types';
 import { GoogleGenAI, Type } from "@google/genai";
 
 interface AddTaskBarProps {
-  onAddTask: (title: string | Partial<Task>, dueDate?: string, hasNotification?: boolean) => void;
+  onAddTask: (title: string | Partial<Task>, dueDate?: string, hasNotification?: boolean, dueDateKey?: string) => void;
 }
 
 const AddTaskBar = forwardRef<HTMLInputElement, AddTaskBarProps>(({ onAddTask }, ref) => {
@@ -38,12 +38,15 @@ const AddTaskBar = forwardRef<HTMLInputElement, AddTaskBarProps>(({ onAddTask },
   const submitTask = () => {
     if (!inputValue.trim()) return;
     let dateStr = undefined;
+    let dateKey = undefined;
     if (selectedDate) {
       if (isToday(selectedDate)) dateStr = 'Due today';
       else if (isTomorrow(selectedDate)) dateStr = 'Due tomorrow';
       else dateStr = `Due ${selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+
+      dateKey = `${selectedDate.getFullYear()}-${(selectedDate.getMonth() + 1).toString().padStart(2, '0')}-${selectedDate.getDate().toString().padStart(2, '0')}`;
     }
-    onAddTask(inputValue.trim(), dateStr, hasNotification);
+    onAddTask(inputValue.trim(), dateStr, hasNotification, dateKey);
     setInputValue('');
     setSelectedDate(null);
     setShowCalendar(false);
@@ -76,7 +79,25 @@ const AddTaskBar = forwardRef<HTMLInputElement, AddTaskBarProps>(({ onAddTask },
       });
       const data = JSON.parse(response.text || '{}');
       const formattedSubtasks = data.subtasks?.map((t: string) => ({ id: Date.now().toString() + Math.random(), title: t, isCompleted: false }));
-      onAddTask({ ...data, subtasks: formattedSubtasks, title: data.title || inputValue });
+
+      let dueDateKey = undefined;
+      if (data.dueDate) {
+        const lowerDate = data.dueDate.toLowerCase();
+        const date = new Date();
+        if (lowerDate.includes('today')) {
+          // Keep current date
+        } else if (lowerDate.includes('tomorrow')) {
+          date.setDate(date.getDate() + 1);
+        } else {
+          const parsed = new Date(data.dueDate);
+          if (!isNaN(parsed.getTime())) {
+            date.setFullYear(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+          }
+        }
+        dueDateKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+      }
+
+      onAddTask({ ...data, subtasks: formattedSubtasks, title: data.title || inputValue }, data.dueDate, false, dueDateKey);
       setInputValue(''); setSelectedDate(null); setHasNotification(false);
     } catch (e) {
       console.error(e);
@@ -129,7 +150,7 @@ const AddTaskBar = forwardRef<HTMLInputElement, AddTaskBarProps>(({ onAddTask },
   };
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8 flex justify-center pointer-events-none z-[60]">
+    <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8 flex justify-center pointer-events-none z-[50]">
       <div className={`
         relative w-full max-w-3xl bg-white/90 dark:bg-slate-900/95 backdrop-blur-2xl rounded-[2.5rem] shadow-[0_30px_70px_rgba(0,0,0,0.2)] dark:shadow-[0_30px_70px_rgba(0,0,0,0.5)] border border-white/40 dark:border-slate-800/50 p-2 sm:p-2.5 pointer-events-auto transition-all duration-500
         ${isThinking ? 'ring-2 ring-purple-500/30' : ''}
