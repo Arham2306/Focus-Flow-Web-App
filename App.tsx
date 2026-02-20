@@ -162,9 +162,11 @@ const App: React.FC = () => {
     if (destination.droppableId === ColumnId.COMPLETED) {
       removed.status = TaskStatus.COMPLETED;
       removed.completedDate = new Date().toISOString();
+      removed.previousColumnId = source.droppableId;
     } else {
       removed.status = TaskStatus.TODO;
       delete removed.completedDate;
+      delete removed.previousColumnId;
     }
     removed.columnId = destination.droppableId;
 
@@ -251,13 +253,15 @@ const App: React.FC = () => {
             { label: 'Undo', onClick: 'undo-complete', payload: { taskId: updatedTask.id } }
           );
           updatedTask.completedDate = updatedTask.completedDate || new Date().toISOString();
+          updatedTask.previousColumnId = updatedTask.columnId !== ColumnId.COMPLETED ? updatedTask.columnId : oldTask.columnId;
           updatedTask.columnId = ColumnId.COMPLETED;
         }
         // Detect Un-completion Transition (Undo)
         else if (updatedTask.status !== TaskStatus.COMPLETED && oldTask.status === TaskStatus.COMPLETED) {
           delete updatedTask.completedDate;
           if (updatedTask.columnId === ColumnId.COMPLETED) {
-            updatedTask.columnId = ColumnId.TODAY;
+            updatedTask.columnId = updatedTask.previousColumnId || ColumnId.TODAY;
+            delete updatedTask.previousColumnId;
           }
         }
       }
@@ -308,10 +312,11 @@ const App: React.FC = () => {
           updateTask({
             ...task,
             status: TaskStatus.TODO,
-            columnId: ColumnId.TODAY,
-            completedDate: undefined
+            columnId: task.previousColumnId || ColumnId.TODAY,
+            completedDate: undefined,
+            previousColumnId: undefined
           });
-          addNotification('Undone', `Task "${task.title}" moved back to Today.`, NotificationType.INFO);
+          addNotification('Undone', `Task "${task.title}" moved back.`, NotificationType.INFO);
         }
         break;
       // Add more actions here

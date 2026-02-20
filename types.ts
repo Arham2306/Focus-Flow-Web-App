@@ -49,6 +49,7 @@ export interface Task {
   description?: string;
   priority?: TaskPriority;
   completedDate?: string; // ISO string
+  previousColumnId?: string;
 }
 
 export enum NotificationType {
