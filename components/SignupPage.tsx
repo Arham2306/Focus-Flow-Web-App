@@ -43,7 +43,7 @@ const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onSwitchToLogin, onBa
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950 px-6 py-12 animate-in slide-in-from-right-8 duration-500">
+    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950 px-4 py-8 sm:px-6 sm:py-12 animate-in slide-in-from-right-8 duration-500">
       <div className="w-full max-w-md">
         <button
           onClick={onBack}
@@ -53,13 +53,13 @@ const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onSwitchToLogin, onBa
           Back to home
         </button>
 
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter mb-2">Create Account</h1>
-          <p className="text-slate-500 dark:text-slate-400">Join 10,000+ users finding their flow</p>
+        <div className="text-center mb-8 sm:mb-10">
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tighter mb-2">Create Account</h1>
+          <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400">Join 10,000+ users finding their flow</p>
         </div>
 
-        <div className="bg-slate-50 dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none">
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="bg-slate-50 dark:bg-slate-900 p-6 sm:p-8 rounded-3xl sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             <div>
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Full Name</label>
               <input
@@ -134,7 +134,7 @@ const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onSwitchToLogin, onBa
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <button onClick={handleGoogleSignup} type="button" className="flex items-center justify-center gap-2 py-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
               <img src="https://www.google.com/favicon.ico" className="w-4 h-4" alt="Google" />
               <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Google</span>
