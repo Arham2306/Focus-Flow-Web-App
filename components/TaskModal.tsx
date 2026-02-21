@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import { Task, ColumnData, TaskStatus, Subtask, TaskPriority, ColumnId } from '../types';
+import { formatDateKey, parseDueDateToKey } from '../utils/dateUtils';
 
 interface TaskModalProps {
   task: Task;
@@ -15,6 +16,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, columns, onClose, onUpdate,
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description || '');
   const [dueDate, setDueDate] = useState(task.dueDate || '');
+  const [dueDateKey, setDueDateKey] = useState<string | undefined>(task.dueDateKey || parseDueDateToKey(task.dueDate));
   const [columnId, setColumnId] = useState(task.columnId);
   const [isImportant, setIsImportant] = useState(task.isImportant);
   const [hasNotification, setHasNotification] = useState(task.hasNotification || false);
@@ -36,6 +38,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, columns, onClose, onUpdate,
     setTitle(task.title);
     setDescription(task.description || '');
     setDueDate(task.dueDate || '');
+    setDueDateKey(task.dueDateKey || parseDueDateToKey(task.dueDate));
     setColumnId(task.columnId);
     setIsImportant(task.isImportant);
     setHasNotification(task.hasNotification || false);
@@ -68,8 +71,9 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, columns, onClose, onUpdate,
       if (isFuture) finalColumnId = ColumnId.UPCOMING;
       else if (isTodayDate) finalColumnId = ColumnId.TODAY;
     }
+    const resolvedDueDateKey = dueDate ? (dueDateKey || parseDueDateToKey(dueDate)) : undefined;
     onUpdate({
-      ...task, title, description, dueDate, columnId: finalColumnId,
+      ...task, title, description, dueDate, dueDateKey: resolvedDueDateKey, columnId: finalColumnId,
       isImportant, hasNotification, status, category, subtasks, priority
     });
     onClose();
@@ -149,6 +153,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, columns, onClose, onUpdate,
 
   const handleDateSelect = (date: Date) => {
     setDueDate(formatDueDate(date));
+    setDueDateKey(formatDateKey(date));
     setShowCalendar(false);
   };
 
@@ -167,7 +172,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, columns, onClose, onUpdate,
     }
 
     return (
-      <div className="absolute top-full left-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 p-3 z-50 w-64 animate-in zoom-in-95 duration-200">
+      <div className="absolute top-full left-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 p-3 z-50 w-[min(16rem,calc(100vw-3rem))] sm:w-64 animate-in zoom-in-95 duration-200">
         <div className="flex flex-col gap-1 mb-2 border-b border-slate-100 dark:border-slate-700 pb-2">
           <button onClick={() => handleDateSelect(new Date())} className="text-left px-2 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-primary flex items-center gap-2">
             <span className="material-symbols-outlined !text-sm text-green-500">today</span> Today
@@ -183,7 +188,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, columns, onClose, onUpdate,
         </div>
         <div className="grid grid-cols-7 gap-1 text-center mb-1">{weekDays.map(d => <span key={d} className="text-[10px] text-slate-400 dark:text-slate-500 font-bold">{d}</span>)}</div>
         <div className="grid grid-cols-7 gap-1">{days}</div>
-        {dueDate && <button onClick={() => { setDueDate(''); setShowCalendar(false); }} className="w-full mt-3 py-1 text-[10px] uppercase font-bold text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors">Clear Date</button>}
+        {dueDate && <button onClick={() => { setDueDate(''); setDueDateKey(undefined); setShowCalendar(false); }} className="w-full mt-3 py-1 text-[10px] uppercase font-bold text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors">Clear Date</button>}
       </div>
     );
   };
@@ -255,7 +260,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, columns, onClose, onUpdate,
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div className="flex flex-col gap-1" ref={calendarRef}>
                 <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Due Date</label>
                 <div className="relative">
@@ -341,3 +346,4 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, columns, onClose, onUpdate,
 };
 
 export default TaskModal;
+

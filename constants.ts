@@ -48,6 +48,7 @@ export const NAV_ITEMS = [
   { icon: 'dashboard', label: 'My Day', id: 'my-day' },
   { icon: 'star', label: 'Important', id: 'important' },
   { icon: 'calendar_month', label: 'Planned', id: 'planned' },
+  { icon: 'event_note', label: 'Calendar', id: 'calendar' },
   { icon: 'home', label: 'Tasks', id: 'tasks' },
   { icon: 'check_circle', label: 'Completed', id: 'completed' },
 ];

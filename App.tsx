@@ -6,6 +6,7 @@ import AddTaskBar from './components/AddTaskBar';
 import TaskModal from './components/TaskModal';
 import PomodoroTimer from './components/PomodoroTimer';
 import AdventureView from './components/AdventureView';
+import CalendarView from './components/CalendarView';
 import LandingPage from './components/LandingPage';
 import ProfileView from './components/ProfileView';
 import EditProfileView from './components/EditProfileView';
@@ -162,9 +163,11 @@ const App: React.FC = () => {
     if (destination.droppableId === ColumnId.COMPLETED) {
       removed.status = TaskStatus.COMPLETED;
       removed.completedDate = new Date().toISOString();
+      removed.previousColumnId = source.droppableId;
     } else {
       removed.status = TaskStatus.TODO;
       delete removed.completedDate;
+      delete removed.previousColumnId;
     }
     removed.columnId = destination.droppableId;
 
@@ -183,7 +186,7 @@ const App: React.FC = () => {
   };
 
 
-  const addTask = (data: string | Partial<Task>, dueDate?: string, hasNotification?: boolean) => {
+  const addTask = (data: string | Partial<Task>, dueDate?: string, hasNotification?: boolean, dueDateKey?: string) => {
     const newTask: Task = typeof data === 'string' ? {
       id: `task-${Date.now()}`,
       title: data,
@@ -191,6 +194,7 @@ const App: React.FC = () => {
       isImportant: false,
       columnId: (dueDate && !dueDate.toLowerCase().includes('today')) ? ColumnId.UPCOMING : ColumnId.TODAY,
       dueDate: dueDate,
+      dueDateKey: dueDateKey,
       hasNotification: hasNotification,
       priority: TaskPriority.MEDIUM
     } : {
@@ -200,6 +204,7 @@ const App: React.FC = () => {
       isImportant: data.isImportant || false,
       columnId: (data.dueDate && data.dueDate.toLowerCase().includes('today')) ? ColumnId.TODAY : ColumnId.UPCOMING,
       dueDate: data.dueDate,
+      dueDateKey: data.dueDateKey || dueDateKey,
       description: data.description,
       priority: data.priority || TaskPriority.MEDIUM,
       category: data.category,
@@ -251,13 +256,15 @@ const App: React.FC = () => {
             { label: 'Undo', onClick: 'undo-complete', payload: { taskId: updatedTask.id } }
           );
           updatedTask.completedDate = updatedTask.completedDate || new Date().toISOString();
+          updatedTask.previousColumnId = updatedTask.columnId !== ColumnId.COMPLETED ? updatedTask.columnId : oldTask.columnId;
           updatedTask.columnId = ColumnId.COMPLETED;
         }
         // Detect Un-completion Transition (Undo)
         else if (updatedTask.status !== TaskStatus.COMPLETED && oldTask.status === TaskStatus.COMPLETED) {
           delete updatedTask.completedDate;
           if (updatedTask.columnId === ColumnId.COMPLETED) {
-            updatedTask.columnId = ColumnId.TODAY;
+            updatedTask.columnId = updatedTask.previousColumnId || ColumnId.TODAY;
+            delete updatedTask.previousColumnId;
           }
         }
       }
@@ -308,10 +315,11 @@ const App: React.FC = () => {
           updateTask({
             ...task,
             status: TaskStatus.TODO,
-            columnId: ColumnId.TODAY,
-            completedDate: undefined
+            columnId: task.previousColumnId || ColumnId.TODAY,
+            completedDate: undefined,
+            previousColumnId: undefined
           });
-          addNotification('Undone', `Task "${task.title}" moved back to Today.`, NotificationType.INFO);
+          addNotification('Undone', `Task "${task.title}" moved back.`, NotificationType.INFO);
         }
         break;
       // Add more actions here
@@ -628,6 +636,8 @@ const App: React.FC = () => {
             />
           ) : activeNav === 'edit-profile' ? (
             <EditProfileView onBack={() => setActiveNav('profile')} />
+          ) : activeNav === 'calendar' ? (
+            <CalendarView tasks={tasks} onTaskClick={setSelectedTask} onToggleStatus={toggleStatus} />
           ) : adventureMode ? (
             <AdventureView tasks={filteredTasks} onTaskClick={setSelectedTask} onToggleStatus={toggleStatus} />
           ) : (
