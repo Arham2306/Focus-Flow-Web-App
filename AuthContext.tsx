@@ -50,10 +50,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userMetadata, setUserMetadata] = useState<UserMetadata>({});
   const [loading, setLoading] = useState(true);
-
-  // Check if user has a password provider linked
-  const needsPassword = currentUser !== null &&
-    !currentUser.providerData.some(p => p.providerId === 'password');
+  const [needsPassword, setNeedsPassword] = useState(false);
+  const computeNeedsPassword = (user: User | null) =>
+    user !== null && !user.providerData.some(p => p.providerId === 'password');
 
   useEffect(() => {
     if (currentUser) {
@@ -90,6 +89,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName });
+      // Reload the user object to get the latest data from Firebase
+      await userCredential.user.reload();
       // Force refresh user state from the actual auth instance to keep methods intact
       setCurrentUser(auth.currentUser);
     } catch (error) {
@@ -133,9 +134,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { EmailAuthProvider, linkWithCredential } = await import('firebase/auth');
       const credential = EmailAuthProvider.credential(currentUser.email, password);
       await linkWithCredential(currentUser, credential);
-      // Force refresh user state to update providerData
+      await currentUser.reload();
       setCurrentUser(auth.currentUser);
+      setNeedsPassword(false);
     } catch (error) {
+      if ((error as { code?: string })?.code === 'auth/provider-already-linked') {
+        setNeedsPassword(false);
+      }
       console.error("Error linking password", error);
       throw error;
     }
@@ -165,6 +170,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
       setCurrentUser(user);
+      setNeedsPassword(computeNeedsPassword(user));
       setLoading(false);
     });
 
