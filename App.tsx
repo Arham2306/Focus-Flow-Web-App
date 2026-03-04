@@ -11,8 +11,9 @@ import LandingPage from './components/LandingPage';
 import ProfileView from './components/ProfileView';
 import EditProfileView from './components/EditProfileView';
 import SetPasswordView from './components/SetPasswordView';
+import AnalyticsView from './components/AnalyticsView';
 import { INITIAL_TASKS, NAV_ITEMS } from './constants';
-import { Task, ColumnId, TaskStatus, ColumnData, SortOption, TaskPriority, AppNotification, NotificationType } from './types';
+import { Task, ColumnId, TaskStatus, ColumnData, SortOption, TaskPriority, AppNotification, NotificationType, PomodoroSession } from './types';
 import confetti from 'canvas-confetti';
 import { useAuth } from './AuthContext';
 
@@ -58,6 +59,20 @@ const App: React.FC = () => {
         (!localStorage.getItem('focusflow-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
     }
     return false;
+  });
+
+  const [pomodoroSessions, setPomodoroSessions] = useState<PomodoroSession[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('focusflow-pomodoro');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error("Failed to parse pomodoro sessions", e);
+        }
+      }
+    }
+    return [];
   });
 
   const [activeNav, setActiveNav] = useState('my-day');
@@ -113,6 +128,14 @@ const App: React.FC = () => {
       console.error("Failed to save columns", e);
     }
   }, [columns]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('focusflow-pomodoro', JSON.stringify(pomodoroSessions));
+    } catch (e) {
+      console.error("Failed to save pomodoro sessions", e);
+    }
+  }, [pomodoroSessions]);
 
 
 
@@ -370,6 +393,16 @@ const App: React.FC = () => {
       status: newStatus,
       // columnId and completedDate will be handled by updateTask's transition logic
     });
+  };
+
+  const handlePomodoroComplete = (durationMinutes: number, mode: 'focus' | 'break') => {
+    const newSession: PomodoroSession = {
+      id: `pomodoro-${Date.now()}`,
+      date: new Date().toISOString(),
+      durationMinutes,
+      mode
+    };
+    setPomodoroSessions(prev => [newSession, ...prev]);
   };
 
 
@@ -638,6 +671,8 @@ const App: React.FC = () => {
             <EditProfileView onBack={() => setActiveNav('profile')} />
           ) : activeNav === 'calendar' ? (
             <CalendarView tasks={tasks} onTaskClick={setSelectedTask} onToggleStatus={toggleStatus} />
+          ) : activeNav === 'analytics' ? (
+            <AnalyticsView tasks={tasks} pomodoroSessions={pomodoroSessions} />
           ) : adventureMode ? (
             <AdventureView tasks={filteredTasks} onTaskClick={setSelectedTask} onToggleStatus={toggleStatus} />
           ) : (
@@ -676,7 +711,7 @@ const App: React.FC = () => {
         </div>
 
         {activeNav !== 'profile' && activeNav !== 'edit-profile' && <AddTaskBar onAddTask={addTask} />}
-        <PomodoroTimer />
+        <PomodoroTimer onSessionComplete={handlePomodoroComplete} />
         {selectedTask && (
           <TaskModal task={selectedTask} columns={columns} onClose={() => setSelectedTask(null)} onUpdate={updateTask} onDelete={deleteTask} />
         )}

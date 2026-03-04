@@ -51,4 +51,5 @@ export const NAV_ITEMS = [
   { icon: 'event_note', label: 'Calendar', id: 'calendar' },
   { icon: 'home', label: 'Tasks', id: 'tasks' },
   { icon: 'check_circle', label: 'Completed', id: 'completed' },
+  { icon: 'insights', label: 'Analytics', id: 'analytics' }
 ];

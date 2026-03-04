@@ -74,3 +74,10 @@ export interface AppNotification {
     payload?: any;
   };
 }
+
+export interface PomodoroSession {
+  id: string;
+  date: string; // ISO string 
+  durationMinutes: number;
+  mode: 'focus' | 'break';
+}

@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 
-const PomodoroTimer = () => {
+interface PomodoroTimerProps {
+  onSessionComplete?: (durationMinutes: number, mode: 'focus' | 'break') => void;
+}
+
+const PomodoroTimer = ({ onSessionComplete }: PomodoroTimerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [isActive, setIsActive] = useState(false);
@@ -19,11 +23,14 @@ const PomodoroTimer = () => {
     } else if (timeLeft === 0) {
       setIsActive(false);
       playNotificationSound();
+      if (onSessionComplete && isActive) {
+        onSessionComplete(mode === 'focus' ? 25 : 5, mode);
+      }
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isActive, timeLeft]);
+  }, [isActive, timeLeft, mode, onSessionComplete]);
 
   useEffect(() => {
     const totalTime = mode === 'focus' ? 25 * 60 : 5 * 60;
