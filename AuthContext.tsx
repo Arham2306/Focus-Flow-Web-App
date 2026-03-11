@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { auth, googleProvider, db } from './firebase';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, collection } from 'firebase/firestore';
+import { WorkspaceRole } from './types';
 import {
   signInWithPopup,
   signOut,
@@ -34,6 +35,34 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
+
+const createDefaultWorkspace = async (user: User, displayName: string | null) => {
+  try {
+    const newWorkspaceRef = doc(collection(db, 'workspaces'));
+    const ownerMember = {
+      uid: user.uid,
+      role: WorkspaceRole.OWNER,
+      email: user.email || '',
+      displayName: displayName || 'Unknown User',
+      photoURL: user.photoURL || null
+    };
+
+    const newWorkspaceName = displayName ? `${displayName.split(' ')[0]}'s Workspace` : 'My Workspace';
+
+    const newWorkspace = {
+      name: newWorkspaceName,
+      ownerId: user.uid,
+      createdAt: new Date().toISOString(),
+      members: {
+        [user.uid]: ownerMember
+      },
+      memberIds: [user.uid]
+    };
+    await setDoc(newWorkspaceRef, newWorkspace);
+  } catch (e) {
+    console.error("Failed to create default workspace", e);
+  }
+};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -95,6 +124,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             createdAt: serverTimestamp(),
             lastLoginAt: serverTimestamp()
           });
+
+          await createDefaultWorkspace(result.user, result.user.displayName);
         } else {
           await setDoc(userRef, {
             lastLoginAt: serverTimestamp(),
@@ -123,6 +154,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         createdAt: serverTimestamp(),
         lastLoginAt: serverTimestamp()
       });
+
+      await createDefaultWorkspace(userCredential.user, displayName);
 
       // Reload the user object to get the latest data from Firebase
       await userCredential.user.reload();
