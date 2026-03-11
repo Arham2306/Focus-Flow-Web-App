@@ -47,18 +47,30 @@ export const useWorkspaceData = () => {
                 ...doc.data()
             })) as ColumnData[];
 
-            // Provide defaults if empty
-            if (fetchedColumns.length === 0) {
-                // We don't automatically create default docs here to avoid infinite loops or permission issues, 
-                // usually defaults are created upon workspace creation. For now, we seed state if empty.
-                setColumns([
-                    { id: 'TODAY', title: 'Today', colorClass: 'bg-primary', sortBy: 'CREATION' as any },
-                    { id: 'UPCOMING', title: 'Upcoming', colorClass: 'bg-accent', sortBy: 'CREATION' as any },
-                    { id: 'COMPLETED', title: 'Completed', colorClass: 'bg-green-400', sortBy: 'CREATION' as any }
-                ]);
-            } else {
-                setColumns(fetchedColumns);
-            }
+            const DEFAULT_COLUMNS: ColumnData[] = [
+                { id: 'TODAY', title: 'Today', colorClass: 'bg-primary', sortBy: 'CREATION' as any },
+                { id: 'UPCOMING', title: 'Upcoming', colorClass: 'bg-accent', sortBy: 'CREATION' as any },
+                { id: 'COMPLETED', title: 'Completed', colorClass: 'bg-green-400', sortBy: 'CREATION' as any }
+            ];
+
+            const columnMap = new Map<string, ColumnData>();
+            DEFAULT_COLUMNS.forEach(c => columnMap.set(c.id, c));
+
+            // Overwrite defaults with any customized settings from DB, and add new custom columns
+            fetchedColumns.forEach(c => {
+                columnMap.set(c.id, c);
+            });
+
+            // Ensure stable order: Today -> Upcoming -> Completed -> Custom
+            const finalColumns = [
+                columnMap.get('TODAY')!,
+                columnMap.get('UPCOMING')!,
+                columnMap.get('COMPLETED')!
+            ].concat(
+                fetchedColumns.filter(c => !['TODAY', 'UPCOMING', 'COMPLETED'].includes(c.id))
+            );
+
+            setColumns(finalColumns);
             setLoading(false);
         });
 
