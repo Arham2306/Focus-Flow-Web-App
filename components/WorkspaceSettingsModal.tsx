@@ -5,6 +5,7 @@ import { db } from '../firebase';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import { useAuth } from '../AuthContext';
 import { WorkspaceRole } from '../types';
+import DialogModal, { DialogModalConfig } from './DialogModal';
 
 interface WorkspaceSettingsModalProps {
     workspace: Workspace;
@@ -28,6 +29,11 @@ const WorkspaceSettingsModal: React.FC<WorkspaceSettingsModalProps> = ({ workspa
     // Shareable link states
     const [inviteLink, setInviteLink] = useState('');
     const [generatingLink, setGeneratingLink] = useState(false);
+
+    // Dialog state
+    const [dialogConfig, setDialogConfig] = useState<DialogModalConfig>({ isOpen: false, title: '', message: '' });
+    const openDialog = (config: Omit<DialogModalConfig, 'isOpen'>) => setDialogConfig({ ...config, isOpen: true });
+    const closeDialog = () => setDialogConfig(prev => ({ ...prev, isOpen: false }));
 
     const currentUserRole = workspace.members[currentUser?.uid || '']?.role || WorkspaceRole.MEMBER;
     const canManageWorkspace = currentUserRole === WorkspaceRole.OWNER || currentUserRole === WorkspaceRole.ADMIN;
@@ -58,7 +64,7 @@ const WorkspaceSettingsModal: React.FC<WorkspaceSettingsModalProps> = ({ workspa
             // We don't close, just show success implicitly or toast
         } catch (error) {
             console.error('Failed to rename workspace', error);
-            alert('Failed to rename workspace.');
+            openDialog({ title: 'Error', message: 'Failed to rename workspace.', type: 'danger' });
         } finally {
             setIsSaving(false);
         }
@@ -70,19 +76,26 @@ const WorkspaceSettingsModal: React.FC<WorkspaceSettingsModalProps> = ({ workspa
             ? `Are you sure you want to permanently delete "${workspace.name}"? This cannot be undone.`
             : `Are you sure you want to leave "${workspace.name}"?`;
 
-        if (window.confirm(confirmMessage)) {
-            try {
-                if (isOwner) {
-                    await deleteWorkspace(workspace.id);
-                } else {
-                    await leaveWorkspace(workspace.id);
+        openDialog({
+            title: isOwner ? 'Delete Workspace' : 'Leave Workspace',
+            message: confirmMessage,
+            type: 'danger',
+            confirmText: isOwner ? 'Delete' : 'Leave',
+            hideCancel: false,
+            onConfirm: async () => {
+                try {
+                    if (isOwner) {
+                        await deleteWorkspace(workspace.id);
+                    } else {
+                        await leaveWorkspace(workspace.id);
+                    }
+                    onClose();
+                } catch (error) {
+                    console.error(`Failed to ${action} workspace`, error);
+                    openDialog({ title: 'Error', message: `Failed to ${action} workspace.`, type: 'danger' });
                 }
-                onClose();
-            } catch (error) {
-                console.error(`Failed to ${action} workspace`, error);
-                alert(`Failed to ${action} workspace.`);
             }
-        }
+        });
     };
 
     const handleInvite = async (e: React.FormEvent) => {
@@ -156,7 +169,7 @@ const WorkspaceSettingsModal: React.FC<WorkspaceSettingsModalProps> = ({ workspa
             await deleteDoc(doc(db, 'invites', inviteId));
             setPendingInvites(prev => prev.filter(inv => inv.id !== inviteId));
         } catch (err) {
-            alert("Failed to cancel invite.");
+            openDialog({ title: 'Error', message: 'Failed to cancel invite.', type: 'danger' });
         }
     };
 
@@ -176,20 +189,28 @@ const WorkspaceSettingsModal: React.FC<WorkspaceSettingsModalProps> = ({ workspa
             setInviteLink(link);
         } catch (error) {
             console.error(error);
-            alert("Failed to generate link.");
+            openDialog({ title: 'Error', message: 'Failed to generate link.', type: 'danger' });
         } finally {
             setGeneratingLink(false);
         }
     };
 
     const handleRemoveMember = async (memberUid: string, memberName: string) => {
-        if (!window.confirm(`Are you sure you want to remove ${memberName} from the workspace?`)) return;
-        try {
-            await removeMember(workspace.id, memberUid);
-        } catch (error) {
-            console.error("Failed to remove member", error);
-            alert("Failed to remove member. " + (error as Error).message);
-        }
+        openDialog({
+            title: 'Remove Member',
+            message: `Are you sure you want to remove ${memberName} from the workspace?`,
+            type: 'danger',
+            confirmText: 'Remove',
+            hideCancel: false,
+            onConfirm: async () => {
+                try {
+                    await removeMember(workspace.id, memberUid);
+                } catch (error) {
+                    console.error("Failed to remove member", error);
+                    openDialog({ title: 'Error', message: "Failed to remove member. " + (error as Error).message, type: 'danger' });
+                }
+            }
+        });
     };
 
     return (
@@ -346,7 +367,7 @@ const WorkspaceSettingsModal: React.FC<WorkspaceSettingsModalProps> = ({ workspa
                                                 />
                                                 <button
                                                     type="button"
-                                                    onClick={() => { navigator.clipboard.writeText(inviteLink); alert('Link copied!'); }}
+                                                    onClick={() => { navigator.clipboard.writeText(inviteLink); openDialog({ title: 'Success', message: 'Link copied to clipboard!', type: 'success' }); }}
                                                     className="px-4 py-1.5 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-primary-dark transition-colors shrink-0"
                                                 >
                                                     Copy
@@ -435,6 +456,8 @@ const WorkspaceSettingsModal: React.FC<WorkspaceSettingsModalProps> = ({ workspa
                 </div>
 
             </div>
+
+            <DialogModal {...dialogConfig} onClose={closeDialog} />
         </div>
     );
 };

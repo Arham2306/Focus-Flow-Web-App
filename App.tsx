@@ -13,6 +13,7 @@ import EditProfileView from './components/EditProfileView';
 import SetPasswordView from './components/SetPasswordView';
 import AnalyticsView from './components/AnalyticsView';
 import InviteLandingView from './components/InviteLandingView';
+import DialogModal, { DialogModalConfig } from './components/DialogModal';
 import { INITIAL_TASKS, NAV_ITEMS } from './constants';
 import { Task, ColumnId, TaskStatus, ColumnData, SortOption, TaskPriority, AppNotification, NotificationType, PomodoroSession, WorkspaceInvite, WorkspaceRole } from './types';
 import confetti from 'canvas-confetti';
@@ -107,6 +108,12 @@ const App: React.FC = () => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [activeToasts, setActiveToasts] = useState<AppNotification[]>([]);
   const [pendingInvites, setPendingInvites] = useState<WorkspaceInvite[]>([]);
+
+  // Dialog state
+  const [dialogConfig, setDialogConfig] = useState<DialogModalConfig>({ isOpen: false, title: '', message: '' });
+  const openDialog = (config: Omit<DialogModalConfig, 'isOpen'>) => setDialogConfig({ ...config, isOpen: true });
+  const closeDialog = () => setDialogConfig(prev => ({ ...prev, isOpen: false }));
+
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const notificationDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -302,12 +309,18 @@ const App: React.FC = () => {
     // Prevent deletion of system columns
     if (id === ColumnId.TODAY || id === ColumnId.UPCOMING || id === ColumnId.COMPLETED) return;
 
-    const confirmMessage = "Are you sure you want to delete this column? All tasks inside will be permanently removed.";
-    if (window.confirm(confirmMessage)) {
-      firestoreDeleteColumn(id);
-      // Delete associated tasks
-      tasks.filter(t => t.columnId === id).forEach(t => firestoreDeleteTask(t.id));
-    }
+    openDialog({
+      title: 'Delete Column',
+      message: "Are you sure you want to delete this column? All tasks inside will be permanently removed.",
+      type: 'danger',
+      confirmText: 'Delete',
+      hideCancel: false,
+      onConfirm: () => {
+        firestoreDeleteColumn(id);
+        // Delete associated tasks
+        tasks.filter(t => t.columnId === id).forEach(t => firestoreDeleteTask(t.id));
+      }
+    });
   };
 
   const updateTask = (updatedTask: Task) => {
@@ -897,6 +910,8 @@ const App: React.FC = () => {
           ))}
         </div>
       </main>
+
+      <DialogModal {...dialogConfig} onClose={closeDialog} />
     </div>
   );
 };

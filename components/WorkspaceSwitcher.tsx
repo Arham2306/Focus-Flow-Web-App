@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useActiveWorkspace } from '../WorkspaceContext';
 import WorkspaceSettingsModal from './WorkspaceSettingsModal'; // We will create this next
+import DialogModal, { DialogModalConfig } from './DialogModal';
 
 const WorkspaceSwitcher: React.FC = () => {
     const { workspaces, activeWorkspace, setActiveWorkspaceId, createWorkspace } = useActiveWorkspace();
@@ -10,6 +11,11 @@ const WorkspaceSwitcher: React.FC = () => {
     const [newWorkspaceName, setNewWorkspaceName] = useState('');
     const [isCreating, setIsCreating] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Dialog state
+    const [dialogConfig, setDialogConfig] = useState<DialogModalConfig>({ isOpen: false, title: '', message: '' });
+    const openDialog = (config: Omit<DialogModalConfig, 'isOpen'>) => setDialogConfig({ ...config, isOpen: true });
+    const closeDialog = () => setDialogConfig(prev => ({ ...prev, isOpen: false }));
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -32,7 +38,7 @@ const WorkspaceSwitcher: React.FC = () => {
             setIsOpen(false);
         } catch (error) {
             console.error('Failed to create workspace', error);
-            alert('Failed to create workspace. Please try again.');
+            openDialog({ title: 'Error', message: 'Failed to create workspace. Please try again.', type: 'danger' });
         } finally {
             setIsCreating(false);
         }
@@ -66,8 +72,8 @@ const WorkspaceSwitcher: React.FC = () => {
                                         setIsOpen(false);
                                     }}
                                     className={`w-full text-left flex items-center justify-between px-2 py-2 rounded-lg text-sm font-bold transition-colors ${activeWorkspace?.id === ws.id
-                                            ? 'bg-primary/10 text-primary'
-                                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                        ? 'bg-primary/10 text-primary'
+                                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                                         }`}
                                 >
                                     <span className="truncate pr-4">{ws.name}</span>
@@ -158,6 +164,8 @@ const WorkspaceSwitcher: React.FC = () => {
                     onClose={() => setShowSettingsModal(false)}
                 />
             )}
+
+            <DialogModal {...dialogConfig} onClose={closeDialog} />
         </>
     );
 };
