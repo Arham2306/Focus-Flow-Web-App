@@ -61,7 +61,7 @@ const WorkspaceSwitcher: React.FC = () => {
                 </button>
 
                 {isOpen && (
-                    <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] border border-slate-100 dark:border-slate-800 overflow-hidden z-50 animate-in slide-in-from-top-2 zoom-in-95 duration-200">
+                    <div className="absolute top-full -left-6 sm:left-0 mt-2 w-56 sm:w-64 max-w-[90vw] bg-white dark:bg-slate-900 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] border border-slate-100 dark:border-slate-800 overflow-hidden z-50 animate-in slide-in-from-top-2 zoom-in-95 duration-200">
                         <div className="p-2 border-b border-slate-100 dark:border-slate-800">
                             <p className="px-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Your Workspaces</p>
                             {workspaces.map((ws) => (
