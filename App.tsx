@@ -12,6 +12,7 @@ import ProfileView from './components/ProfileView';
 import EditProfileView from './components/EditProfileView';
 import SetPasswordView from './components/SetPasswordView';
 import AnalyticsView from './components/AnalyticsView';
+import InviteLandingView from './components/InviteLandingView';
 import { INITIAL_TASKS, NAV_ITEMS } from './constants';
 import { Task, ColumnId, TaskStatus, ColumnData, SortOption, TaskPriority, AppNotification, NotificationType, PomodoroSession, WorkspaceInvite, WorkspaceRole } from './types';
 import confetti from 'canvas-confetti';
@@ -27,6 +28,8 @@ const App: React.FC = () => {
   const isLoggedIn = !!currentUser;
 
   const { activeWorkspace } = useActiveWorkspace();
+  const currentUserRole = activeWorkspace?.members?.[currentUser?.uid || '']?.role || WorkspaceRole.MEMBER;
+  const canManageColumns = currentUserRole === WorkspaceRole.OWNER || currentUserRole === WorkspaceRole.ADMIN;
   const {
     tasks,
     columns,
@@ -59,6 +62,13 @@ const App: React.FC = () => {
       }
     }
     return [];
+  });
+
+  const [initialInviteId, setInitialInviteId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/invite/')) {
+      return window.location.pathname.replace('/invite/', '');
+    }
+    return null;
   });
 
   const [activeNav, setActiveNav] = useState('my-day');
@@ -117,6 +127,44 @@ const App: React.FC = () => {
         ...doc.data()
       })) as WorkspaceInvite[];
       setPendingInvites(invites);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser]);
+
+  // Listen for targeted app notifications (e.g., getting removed from a workspace)
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+
+    const notifsRef = collection(db, 'appNotifications');
+    const q = query(notifsRef, where('userId', '==', currentUser.uid), where('isRead', '==', false));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'added') {
+          const data = change.doc.data();
+
+          // Show toast
+          const newToast: AppNotification = {
+            id: change.doc.id,
+            title: data.title,
+            message: data.message,
+            type: data.type || NotificationType.INFO,
+            timestamp: data.timestamp || new Date().toISOString(),
+            isRead: false
+          };
+
+          setActiveToasts(prev => [newToast, ...prev]);
+          setNotifications(prev => {
+            // Check if we already have it to avoid duplicates
+            if (prev.some(n => n.id === change.doc.id)) return prev;
+            return [newToast, ...prev];
+          });
+
+          // Mark as "read" in DB so we don't fetch it again on next reload
+          updateDoc(doc(db, 'appNotifications', change.doc.id), { isRead: true }).catch(console.error);
+        }
+      });
     });
 
     return () => unsubscribe();
@@ -479,6 +527,10 @@ const App: React.FC = () => {
     );
   }
 
+  if (initialInviteId) {
+    return <InviteLandingView inviteId={initialInviteId} onComplete={() => setInitialInviteId(null)} />;
+  }
+
   if (!isLoggedIn) return <LandingPage onLogin={signInWithGoogle} darkMode={darkMode} onToggleDarkMode={toggleDarkMode} />;
 
   if (needsPassword) return <SetPasswordView />;
@@ -773,27 +825,29 @@ const App: React.FC = () => {
                     tasks={filteredTasks.filter(t => t.columnId === col.id)}
                     onToggleStatus={toggleStatus} onToggleImportant={toggleImportant}
                     onTaskClick={setSelectedTask} sortBy={col.sortBy} onSortChange={(opt) => handleSortChange(col.id, opt)}
-                    onDelete={() => deleteColumn(col.id)}
+                    onDelete={canManageColumns ? () => deleteColumn(col.id) : undefined}
                     viewMode={viewMode}
                   />
                 ))}
 
-                <div className={`${viewMode === 'board' ? 'board-column shrink-0' : 'w-full'} flex flex-col`}>
-                  {!isAddingColumn ? (
-                    <button onClick={() => setIsAddingColumn(true)} className={`w-full ${viewMode === 'board' ? 'h-24 sm:h-32' : 'h-16'} border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-center gap-2 text-slate-400 hover:text-primary transition-all group shrink-0`}>
-                      <span className="material-symbols-outlined !text-xl sm:!text-2xl transition-transform group-hover:scale-110">add_circle</span>
-                      <span className="text-[10px] font-black uppercase tracking-widest">Add Column</span>
-                    </button>
-                  ) : (
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 sm:p-4 rounded-2xl shadow-xl shrink-0">
-                      <input autoFocus value={newColumnTitle} onChange={(e) => setNewColumnTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addColumn()} onBlur={addColumn} className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl py-2 px-3 text-sm font-bold placeholder-slate-400 mb-2" placeholder="Title..." />
-                      <div className="flex gap-2">
-                        <button onClick={addColumn} className="flex-1 py-1.5 bg-primary text-white rounded-lg text-[10px] font-bold">Add</button>
-                        <button onClick={() => setIsAddingColumn(false)} className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg text-[10px] font-bold">Cancel</button>
+                {canManageColumns && (
+                  <div className={`${viewMode === 'board' ? 'board-column shrink-0' : 'w-full'} flex flex-col`}>
+                    {!isAddingColumn ? (
+                      <button onClick={() => setIsAddingColumn(true)} className={`w-full ${viewMode === 'board' ? 'h-24 sm:h-32' : 'h-16'} border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-center gap-2 text-slate-400 hover:text-primary transition-all group shrink-0`}>
+                        <span className="material-symbols-outlined !text-xl sm:!text-2xl transition-transform group-hover:scale-110">add_circle</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Add Column</span>
+                      </button>
+                    ) : (
+                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 sm:p-4 rounded-2xl shadow-xl shrink-0">
+                        <input autoFocus value={newColumnTitle} onChange={(e) => setNewColumnTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addColumn()} onBlur={addColumn} className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl py-2 px-3 text-sm font-bold placeholder-slate-400 mb-2" placeholder="Title..." />
+                        <div className="flex gap-2">
+                          <button onClick={addColumn} className="flex-1 py-1.5 bg-primary text-white rounded-lg text-[10px] font-bold">Add</button>
+                          <button onClick={() => setIsAddingColumn(false)} className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg text-[10px] font-bold">Cancel</button>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
               </div>
             </DragDropContext>
           )}

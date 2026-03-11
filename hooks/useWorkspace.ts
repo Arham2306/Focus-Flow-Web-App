@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { db } from '../firebase';
-import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, updateDoc, getDoc, addDoc } from 'firebase/firestore';
 import { Workspace, WorkspaceMember, WorkspaceRole } from '../types';
 import { useAuth } from '../AuthContext';
 
@@ -149,6 +149,36 @@ export const useWorkspace = () => {
         }
     }
 
+    const removeMember = async (workspaceId: string, memberUid: string) => {
+        if (!currentUser) return;
+        const workspaceRef = doc(db, 'workspaces', workspaceId);
+        const wsDoc = await getDoc(workspaceRef);
+        if (wsDoc.exists()) {
+            const data = wsDoc.data() as Workspace;
+            const currentUserRole = data.members[currentUser.uid]?.role;
+            if (currentUserRole !== WorkspaceRole.OWNER && currentUserRole !== WorkspaceRole.ADMIN) {
+                throw new Error("Only admins and owners can remove members.");
+            }
+            if (memberUid === data.ownerId) {
+                throw new Error("Cannot remove the owner. Transfer ownership first.");
+            }
+            const members = { ...data.members };
+            delete members[memberUid];
+            const memberIds = data.memberIds ? data.memberIds.filter(id => id !== memberUid) : [];
+            await updateDoc(workspaceRef, { members, memberIds });
+
+            // Notify the user that they were removed
+            await addDoc(collection(db, 'appNotifications'), {
+                userId: memberUid,
+                title: 'Workspace Access Removed',
+                message: `You are no longer a member of "${data.name}".`,
+                type: 'warning',
+                timestamp: new Date().toISOString(),
+                isRead: false
+            });
+        }
+    };
+
     const deleteWorkspace = async (workspaceId: string) => {
         if (!currentUser) return;
         const workspaceRef = doc(db, 'workspaces', workspaceId);
@@ -165,6 +195,7 @@ export const useWorkspace = () => {
         createWorkspace,
         updateWorkspaceName,
         deleteWorkspace,
-        leaveWorkspace
+        leaveWorkspace,
+        removeMember
     };
 };

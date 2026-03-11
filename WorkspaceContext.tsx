@@ -12,6 +12,7 @@ interface WorkspaceContextType {
     updateWorkspaceName: (id: string, name: string) => Promise<void>;
     deleteWorkspace: (id: string) => Promise<void>;
     leaveWorkspace: (id: string) => Promise<void>;
+    removeMember: (workspaceId: string, memberUid: string) => Promise<void>;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextType | null>(null);
@@ -33,6 +34,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
         updateWorkspaceName,
         deleteWorkspace,
         leaveWorkspace,
+        removeMember
     } = useWorkspace();
 
     const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
@@ -80,6 +82,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
                 updateWorkspaceName,
                 deleteWorkspace,
                 leaveWorkspace,
+                removeMember
             }}
         >
             {children}

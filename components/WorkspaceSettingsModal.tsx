@@ -4,6 +4,7 @@ import { useActiveWorkspace } from '../WorkspaceContext';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import { useAuth } from '../AuthContext';
+import { WorkspaceRole } from '../types';
 
 interface WorkspaceSettingsModalProps {
     workspace: Workspace;
@@ -11,7 +12,7 @@ interface WorkspaceSettingsModalProps {
 }
 
 const WorkspaceSettingsModal: React.FC<WorkspaceSettingsModalProps> = ({ workspace, onClose }) => {
-    const { updateWorkspaceName, leaveWorkspace, deleteWorkspace } = useActiveWorkspace();
+    const { updateWorkspaceName, leaveWorkspace, deleteWorkspace, removeMember } = useActiveWorkspace();
     const { currentUser } = useAuth();
 
     const [activeTab, setActiveTab] = useState<'general' | 'members'>('general');
@@ -24,12 +25,18 @@ const WorkspaceSettingsModal: React.FC<WorkspaceSettingsModalProps> = ({ workspa
     const [inviteMessage, setInviteMessage] = useState('');
     const [pendingInvites, setPendingInvites] = useState<WorkspaceInvite[]>([]);
 
+    // Shareable link states
+    const [inviteLink, setInviteLink] = useState('');
+    const [generatingLink, setGeneratingLink] = useState(false);
+
+    const currentUserRole = workspace.members[currentUser?.uid || '']?.role || WorkspaceRole.MEMBER;
+    const canManageWorkspace = currentUserRole === WorkspaceRole.OWNER || currentUserRole === WorkspaceRole.ADMIN;
     const isOwner = currentUser?.uid === workspace.ownerId;
 
     useEffect(() => {
         // Fetch pending invites for this workspace
         const fetchInvites = async () => {
-            if (!isOwner) return;
+            if (!canManageWorkspace) return;
             try {
                 const invitesRef = collection(db, 'invites');
                 const q = query(invitesRef, where('workspaceId', '==', workspace.id), where('status', '==', 'pending'));
@@ -149,7 +156,39 @@ const WorkspaceSettingsModal: React.FC<WorkspaceSettingsModalProps> = ({ workspa
             await deleteDoc(doc(db, 'invites', inviteId));
             setPendingInvites(prev => prev.filter(inv => inv.id !== inviteId));
         } catch (err) {
-            console.error("Failed to cancel invite", err);
+            alert("Failed to cancel invite.");
+        }
+    };
+
+    const handleGenerateLink = async () => {
+        if (!currentUser) return;
+        setGeneratingLink(true);
+        try {
+            const inviteLinksRef = collection(db, 'inviteLinks');
+            const docRef = await addDoc(inviteLinksRef, {
+                workspaceId: workspace.id,
+                workspaceName: workspace.name,
+                createdBy: currentUser.uid,
+                createdAt: serverTimestamp(),
+                active: true
+            });
+            const link = `${window.location.origin}/invite/${docRef.id}`;
+            setInviteLink(link);
+        } catch (error) {
+            console.error(error);
+            alert("Failed to generate link.");
+        } finally {
+            setGeneratingLink(false);
+        }
+    };
+
+    const handleRemoveMember = async (memberUid: string, memberName: string) => {
+        if (!window.confirm(`Are you sure you want to remove ${memberName} from the workspace?`)) return;
+        try {
+            await removeMember(workspace.id, memberUid);
+        } catch (error) {
+            console.error("Failed to remove member", error);
+            alert("Failed to remove member. " + (error as Error).message);
         }
     };
 
@@ -205,10 +244,10 @@ const WorkspaceSettingsModal: React.FC<WorkspaceSettingsModalProps> = ({ workspa
                                         type="text"
                                         value={editName}
                                         onChange={(e) => setEditName(e.target.value)}
-                                        disabled={!isOwner}
+                                        disabled={!canManageWorkspace}
                                         className="flex-1 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-800 dark:text-white disabled:opacity-50"
                                     />
-                                    {isOwner && (
+                                    {canManageWorkspace && (
                                         <button
                                             onClick={handleSaveName}
                                             disabled={isSaving || editName === workspace.name || !editName.trim()}
@@ -241,7 +280,7 @@ const WorkspaceSettingsModal: React.FC<WorkspaceSettingsModalProps> = ({ workspa
                         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
 
                             {/* Invite Section */}
-                            {isOwner && (
+                            {canManageWorkspace && (
                                 <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
                                     <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider mb-1">Invite Members</h3>
                                     <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Invite others to collaborate in this workspace.</p>
@@ -282,6 +321,40 @@ const WorkspaceSettingsModal: React.FC<WorkspaceSettingsModalProps> = ({ workspa
                                         )}
                                     </form>
 
+                                    {/* Shareable Link Section */}
+                                    <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+                                        <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider mb-2">Shareable Invite Link</h4>
+                                        <p className="text-[10px] text-slate-500 mb-3">Generate a link that anyone can use to join this workspace instantly.</p>
+
+                                        {!inviteLink ? (
+                                            <button
+                                                type="button"
+                                                onClick={handleGenerateLink}
+                                                disabled={generatingLink}
+                                                className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                            >
+                                                <span className="material-symbols-outlined !text-[18px]">link</span>
+                                                {generatingLink ? 'Generating...' : 'Generate New Link'}
+                                            </button>
+                                        ) : (
+                                            <div className="flex items-center gap-2 p-1 pl-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+                                                <input
+                                                    type="text"
+                                                    readOnly
+                                                    value={inviteLink}
+                                                    className="flex-1 bg-transparent text-xs font-bold text-primary outline-none truncate"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { navigator.clipboard.writeText(inviteLink); alert('Link copied!'); }}
+                                                    className="px-4 py-1.5 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-primary-dark transition-colors shrink-0"
+                                                >
+                                                    Copy
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+
                                     {/* Pending Invites List */}
                                     {pendingInvites.length > 0 && (
                                         <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
@@ -298,6 +371,7 @@ const WorkspaceSettingsModal: React.FC<WorkspaceSettingsModalProps> = ({ workspa
                                                             </div>
                                                         </div>
                                                         <button
+                                                            type="button"
                                                             onClick={() => cancelInvite(inv.id)}
                                                             className="text-[10px] font-black uppercase text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-lg transition-colors"
                                                         >
@@ -336,12 +410,20 @@ const WorkspaceSettingsModal: React.FC<WorkspaceSettingsModalProps> = ({ workspa
 
                                             <div className="flex items-center gap-3">
                                                 <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg ${member.role === 'owner'
-                                                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                                                        : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                                                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                                    : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
                                                     }`}>
                                                     {member.role}
                                                 </span>
-                                                {/* Future enhancement: Owner can remove members here */}
+                                                {canManageWorkspace && member.uid !== currentUser?.uid && member.role !== 'owner' && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRemoveMember(member.uid, member.displayName)}
+                                                        className="text-[10px] font-black uppercase text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-lg transition-colors border border-transparent hover:border-red-100 dark:hover:border-red-900/30"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
