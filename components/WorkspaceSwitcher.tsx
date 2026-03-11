@@ -49,9 +49,9 @@ const WorkspaceSwitcher: React.FC = () => {
             <div className="relative" ref={dropdownRef}>
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
-                    <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px] sm:text-xs shrink-0">
                         {activeWorkspace?.name.charAt(0).toUpperCase() || 'W'}
                     </div>
                     <span className="hidden sm:inline-block text-sm font-bold text-slate-800 dark:text-white max-w-[120px] truncate">

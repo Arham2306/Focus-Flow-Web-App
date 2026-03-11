@@ -557,8 +557,8 @@ const App: React.FC = () => {
       />
 
       <main className="flex-1 flex flex-col min-w-0 h-full relative">
-        <header className="p-3 sm:p-4 lg:p-6 flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors">
-          <div className="flex items-center gap-2 sm:gap-4 overflow-hidden">
+        <header className="p-2 sm:p-4 lg:p-6 flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors">
+          <div className="flex items-center gap-1 sm:gap-4 overflow-hidden">
             {activeNav === 'profile' || activeNav === 'edit-profile' ? (
               <button
                 onClick={() => setActiveNav(activeNav === 'edit-profile' ? 'profile' : 'my-day')}
@@ -568,15 +568,15 @@ const App: React.FC = () => {
                 <span className="hidden sm:inline text-xs font-black uppercase tracking-widest">Back</span>
               </button>
             ) : (
-              <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
-                <span className="material-symbols-outlined text-slate-600 dark:text-slate-400">menu</span>
+              <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-1 sm:p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                <span className="material-symbols-outlined text-[20px] sm:text-[24px] text-slate-600 dark:text-slate-400">menu</span>
               </button>
             )}
             <div className="truncate">
-              <h2 className="text-base sm:text-xl font-black text-slate-800 dark:text-white tracking-tight truncate">
+              <h2 className="text-sm sm:text-xl font-black text-slate-800 dark:text-white tracking-tight truncate">
                 {activeNav === 'profile' ? 'Profile' : activeNav === 'edit-profile' ? 'Edit Profile' : (NAV_ITEMS.find(n => n.id === activeNav)?.label || 'Dashboard')}
               </h2>
-              <p className="text-[8px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">
+              <p className="hidden xs:block text-[8px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">
                 {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
               </p>
             </div>
@@ -586,27 +586,27 @@ const App: React.FC = () => {
             {!['profile', 'edit-profile', 'calendar', 'analytics'].includes(activeNav) && (
               <WorkspaceSwitcher />
             )}
-            <div className="flex bg-slate-100 dark:bg-slate-800 p-0.5 sm:p-1 rounded-lg sm:rounded-xl border border-slate-200 dark:border-slate-700">
-              <button onClick={() => setAdventureMode(false)} className={`p-1.5 rounded-md sm:rounded-lg flex items-center gap-1 text-[10px] sm:text-xs font-bold transition-all ${!adventureMode ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-slate-400'}`}>
-                <span className="material-symbols-outlined !text-[16px] sm:!text-[18px]">grid_view</span>
+            <div className="flex bg-slate-100 dark:bg-slate-800 p-0.5 sm:p-1 rounded-md sm:rounded-xl border border-slate-200 dark:border-slate-700">
+              <button onClick={() => setAdventureMode(false)} className={`p-1 sm:p-1.5 rounded-sm sm:rounded-lg flex items-center gap-1 text-[10px] sm:text-xs font-bold transition-all ${!adventureMode ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-slate-400'}`}>
+                <span className="material-symbols-outlined !text-[14px] xs:!text-[16px] sm:!text-[18px]">grid_view</span>
                 <span className="hidden xs:inline">Board</span>
               </button>
-              <button onClick={() => setAdventureMode(true)} className={`p-1.5 rounded-md sm:rounded-lg flex items-center gap-1 text-[10px] sm:text-xs font-bold transition-all ${adventureMode ? 'bg-white dark:bg-slate-700 text-accent shadow-sm' : 'text-slate-400'}`}>
-                <span className="material-symbols-outlined !text-[16px] sm:!text-[18px]">map</span>
+              <button onClick={() => setAdventureMode(true)} className={`p-1 sm:p-1.5 rounded-sm sm:rounded-lg flex items-center gap-1 text-[10px] sm:text-xs font-bold transition-all ${adventureMode ? 'bg-white dark:bg-slate-700 text-accent shadow-sm' : 'text-slate-400'}`}>
+                <span className="material-symbols-outlined !text-[14px] xs:!text-[16px] sm:!text-[18px]">map</span>
                 <span className="hidden xs:inline">Adventure</span>
               </button>
             </div>
-            <button onClick={() => setViewMode(viewMode === 'board' ? 'table' : 'board')} className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-primary ${adventureMode ? 'opacity-50' : ''}`} disabled={adventureMode}>
-              <span className="material-symbols-outlined !text-[18px] sm:!text-[20px]">{viewMode === 'board' ? 'list' : 'dashboard'}</span>
+            <button onClick={() => setViewMode(viewMode === 'board' ? 'table' : 'board')} className={`p-1 sm:p-2 rounded-lg sm:rounded-xl border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-primary shrink-0 ${adventureMode ? 'opacity-50' : ''}`} disabled={adventureMode}>
+              <span className="material-symbols-outlined !text-[16px] sm:!text-[20px]">{viewMode === 'board' ? 'list' : 'dashboard'}</span>
             </button>
 
             {/* Notifications Dropdown */}
-            <div className="relative flex items-center" ref={notificationDropdownRef}>
+            <div className="relative flex items-center shrink-0" ref={notificationDropdownRef}>
               <button
                 onClick={() => setNotificationsOpen(!notificationsOpen)}
-                className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border border-slate-200 dark:border-slate-700 transition-all relative ${notificationsOpen ? 'bg-primary/10 border-primary text-primary' : 'text-slate-400 hover:text-primary'}`}
+                className={`p-1 sm:p-2 rounded-lg sm:rounded-xl border border-slate-200 dark:border-slate-700 transition-all relative ${notificationsOpen ? 'bg-primary/10 border-primary text-primary' : 'text-slate-400 hover:text-primary'}`}
               >
-                <span className="material-symbols-outlined !text-[18px] sm:!text-[20px]">notifications</span>
+                <span className="material-symbols-outlined !text-[16px] sm:!text-[20px]">notifications</span>
                 {(notifications.some(n => !n.isRead) || pendingInvites.length > 0) && (
                   <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse"></span>
                 )}
@@ -751,17 +751,17 @@ const App: React.FC = () => {
             </div>
 
             {/* Profile Avatar with Dropdown */}
-            <div className="relative ml-1 flex items-center" ref={profileDropdownRef}>
+            <div className="relative ml-0 sm:ml-1 flex items-center shrink-0" ref={profileDropdownRef}>
               <button onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} className="focus:outline-none flex items-center">
                 {currentUser?.photoURL ? (
                   <img
                     src={currentUser.photoURL}
                     alt={currentUser.displayName || 'Profile'}
-                    className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 object-cover transition-colors ${profileDropdownOpen ? 'border-primary' : 'border-slate-200 dark:border-slate-700 hover:border-primary'}`}
+                    className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full border-2 object-cover transition-colors ${profileDropdownOpen ? 'border-primary' : 'border-slate-200 dark:border-slate-700 hover:border-primary'}`}
                     referrerPolicy="no-referrer"
                   />
                 ) : (
-                  <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 bg-primary/10 flex items-center justify-center transition-colors ${profileDropdownOpen ? 'border-primary' : 'border-slate-200 dark:border-slate-700 hover:border-primary'}`}>
+                  <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full border-2 bg-primary/10 flex items-center justify-center transition-colors ${profileDropdownOpen ? 'border-primary' : 'border-slate-200 dark:border-slate-700 hover:border-primary'}`}>
                     <span className="text-primary font-black text-xs sm:text-sm">
                       {(currentUser?.displayName?.[0] || currentUser?.email?.[0] || 'U').toUpperCase()}
                     </span>

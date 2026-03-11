@@ -203,9 +203,9 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, columns, onClose, onUpdate,
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg m-4 overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col transition-colors duration-200">
-        <div className="p-5 sm:p-6 space-y-5 sm:space-y-6 overflow-y-auto custom-scrollbar">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg m-2 sm:m-4 overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col transition-colors duration-200">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto custom-scrollbar">
           <div className="flex items-start gap-4">
             <button
               onClick={() => {
@@ -316,7 +316,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, columns, onClose, onUpdate,
           </div>
         </div>
 
-        <div className="bg-slate-50 dark:bg-slate-900 px-4 sm:px-6 py-4 flex items-center justify-between border-t border-slate-100 dark:border-slate-700 shrink-0 gap-2">
+        <div className="bg-slate-50 dark:bg-slate-900 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between border-t border-slate-100 dark:border-slate-700 shrink-0 gap-2">
           <button
             onClick={handleDelete}
             className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 sm:px-3 sm:py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 sm:gap-2 group shrink-0"
@@ -328,13 +328,13 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, columns, onClose, onUpdate,
           <div className="flex gap-2 items-center flex-1 justify-end flex-nowrap min-w-0">
             <button
               onClick={onClose}
-              className="px-3 sm:px-4 py-2 text-slate-600 dark:text-slate-400 font-bold text-xs sm:text-sm hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors shrink-0"
+              className="px-2 sm:px-4 py-2 text-slate-600 dark:text-slate-400 font-bold text-xs sm:text-sm hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors shrink-0"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              className="px-4 sm:px-6 py-2 bg-primary text-white font-bold text-xs sm:text-sm rounded-xl shadow-sm hover:shadow-md hover:bg-primary/90 transition-all whitespace-nowrap flex-shrink-0"
+              className="px-3 sm:px-6 py-2 bg-primary text-white font-bold text-xs sm:text-sm rounded-xl shadow-sm hover:shadow-md hover:bg-primary/90 transition-all whitespace-nowrap flex-shrink-0"
             >
               Save Changes
             </button>
