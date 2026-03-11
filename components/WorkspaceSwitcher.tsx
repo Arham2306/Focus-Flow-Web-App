@@ -49,15 +49,15 @@ const WorkspaceSwitcher: React.FC = () => {
             <div className="relative" ref={dropdownRef}>
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
-                    <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                    <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
                         {activeWorkspace?.name.charAt(0).toUpperCase() || 'W'}
                     </div>
-                    <span className="text-sm font-bold text-slate-800 dark:text-white max-w-[120px] truncate">
+                    <span className="hidden sm:inline-block text-sm font-bold text-slate-800 dark:text-white max-w-[120px] truncate">
                         {activeWorkspace?.name || 'Select Workspace'}
                     </span>
-                    <span className="material-symbols-outlined text-[18px] text-slate-400">expand_more</span>
+                    <span className="hidden sm:inline-block material-symbols-outlined text-[18px] text-slate-400">expand_more</span>
                 </button>
 
                 {isOpen && (

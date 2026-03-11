@@ -260,7 +260,7 @@ const WorkspaceSettingsModal: React.FC<WorkspaceSettingsModalProps> = ({ workspa
                             <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
                                 <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider mb-1">Workspace Name</h3>
                                 <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Change the display name of this workspace.</p>
-                                <div className="flex gap-3">
+                                <div className="flex flex-col sm:flex-row gap-3">
                                     <input
                                         type="text"
                                         value={editName}
@@ -272,7 +272,7 @@ const WorkspaceSettingsModal: React.FC<WorkspaceSettingsModalProps> = ({ workspa
                                         <button
                                             onClick={handleSaveName}
                                             disabled={isSaving || editName === workspace.name || !editName.trim()}
-                                            className="px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50"
+                                            className="px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
                                         >
                                             {isSaving ? 'Saving...' : 'Rename'}
                                         </button>
@@ -307,7 +307,7 @@ const WorkspaceSettingsModal: React.FC<WorkspaceSettingsModalProps> = ({ workspa
                                     <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Invite others to collaborate in this workspace.</p>
 
                                     <form onSubmit={handleInvite} className="flex flex-col gap-3">
-                                        <div className="flex gap-3">
+                                        <div className="flex flex-col sm:flex-row gap-3">
                                             <div className="relative flex-1">
                                                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 !text-[18px]">mail</span>
                                                 <input
@@ -358,7 +358,7 @@ const WorkspaceSettingsModal: React.FC<WorkspaceSettingsModalProps> = ({ workspa
                                                 {generatingLink ? 'Generating...' : 'Generate New Link'}
                                             </button>
                                         ) : (
-                                            <div className="flex items-center gap-2 p-1 pl-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+                                            <div className="flex flex-col sm:flex-row items-center gap-2 p-1 pl-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
                                                 <input
                                                     type="text"
                                                     readOnly
@@ -368,7 +368,7 @@ const WorkspaceSettingsModal: React.FC<WorkspaceSettingsModalProps> = ({ workspa
                                                 <button
                                                     type="button"
                                                     onClick={() => { navigator.clipboard.writeText(inviteLink); openDialog({ title: 'Success', message: 'Link copied to clipboard!', type: 'success' }); }}
-                                                    className="px-4 py-1.5 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-primary-dark transition-colors shrink-0"
+                                                    className="px-4 py-2 sm:py-1.5 bg-primary text-white text-[10px] sm:text-[10px] w-full sm:w-auto font-black uppercase tracking-widest rounded-lg hover:bg-primary-dark transition-colors shrink-0"
                                                 >
                                                     Copy
                                                 </button>
