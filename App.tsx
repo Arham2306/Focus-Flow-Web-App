@@ -13,45 +13,31 @@ import EditProfileView from './components/EditProfileView';
 import SetPasswordView from './components/SetPasswordView';
 import AnalyticsView from './components/AnalyticsView';
 import { INITIAL_TASKS, NAV_ITEMS } from './constants';
-import { Task, ColumnId, TaskStatus, ColumnData, SortOption, TaskPriority, AppNotification, NotificationType, PomodoroSession } from './types';
+import { Task, ColumnId, TaskStatus, ColumnData, SortOption, TaskPriority, AppNotification, NotificationType, PomodoroSession, WorkspaceInvite, WorkspaceRole } from './types';
 import confetti from 'canvas-confetti';
 import { useAuth } from './AuthContext';
+import { useWorkspaceData } from './hooks/useWorkspaceData';
+import { useActiveWorkspace } from './WorkspaceContext';
+import WorkspaceSwitcher from './components/WorkspaceSwitcher';
+import { db } from './firebase';
+import { collection, query, where, onSnapshot, doc, updateDoc, getDoc } from 'firebase/firestore';
 
 const App: React.FC = () => {
   const { currentUser, loading, signInWithGoogle, logout, needsPassword } = useAuth();
   const isLoggedIn = !!currentUser;
 
-  const [tasks, setTasks] = useState<Task[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('focusflow-tasks');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {
-          console.error("Failed to parse tasks from storage", e);
-        }
-      }
-    }
-    return INITIAL_TASKS;
-  });
-
-  const [columns, setColumns] = useState<ColumnData[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('focusflow-columns');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {
-          console.error("Failed to parse columns from storage", e);
-        }
-      }
-    }
-    return [
-      { id: ColumnId.TODAY, title: 'Today', colorClass: 'bg-primary', sortBy: SortOption.CREATION },
-      { id: ColumnId.UPCOMING, title: 'Upcoming', colorClass: 'bg-accent', sortBy: SortOption.CREATION },
-      { id: ColumnId.COMPLETED, title: 'Completed', colorClass: 'bg-green-400', sortBy: SortOption.CREATION }
-    ];
-  });
+  const { activeWorkspace } = useActiveWorkspace();
+  const {
+    tasks,
+    columns,
+    loading: workspaceDataLoading,
+    addTask: firestoreAddTask,
+    updateTask: firestoreUpdateTask,
+    deleteTask: firestoreDeleteTask,
+    addColumn: firestoreAddColumn,
+    updateColumn: firestoreUpdateColumn,
+    deleteColumn: firestoreDeleteColumn
+  } = useWorkspaceData();
 
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -110,24 +96,31 @@ const App: React.FC = () => {
   });
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [activeToasts, setActiveToasts] = useState<AppNotification[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<WorkspaceInvite[]>([]);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const notificationDropdownRef = useRef<HTMLDivElement>(null);
 
+  // Listen for pending workspace invites
   useEffect(() => {
-    try {
-      localStorage.setItem('focusflow-tasks', JSON.stringify(tasks));
-    } catch (e) {
-      console.error("Failed to save tasks", e);
-    }
-  }, [tasks]);
+    if (!currentUser?.email) return;
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('focusflow-columns', JSON.stringify(columns));
-    } catch (e) {
-      console.error("Failed to save columns", e);
-    }
-  }, [columns]);
+    const invitesRef = collection(db, 'invites');
+    const q = query(
+      invitesRef,
+      where('inviteeEmail', '==', currentUser.email),
+      where('status', '==', 'pending')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const invites = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as WorkspaceInvite[];
+      setPendingInvites(invites);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser]);
 
   useEffect(() => {
     try {
@@ -194,8 +187,9 @@ const App: React.FC = () => {
     }
     removed.columnId = destination.droppableId;
 
-    newTasks.push(removed);
-    setTasks(newTasks);
+    // Optimistically update the UI is handled by Firestore real-time listeners mostly, 
+    // but we can let Firestore handle the actual persistence.
+    firestoreUpdateTask(removed);
 
     if (destination.droppableId === ColumnId.COMPLETED && source.droppableId !== ColumnId.COMPLETED) {
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#FF5F5F', '#FFD700', '#4ade80'] });
@@ -232,10 +226,11 @@ const App: React.FC = () => {
       priority: data.priority || TaskPriority.MEDIUM,
       category: data.category,
       subtasks: data.subtasks || [],
-      hasNotification: data.hasNotification
+      hasNotification: data.hasNotification,
+      workspaceId: activeWorkspace?.id
     };
 
-    setTasks(prev => [newTask, ...prev]);
+    firestoreAddTask(newTask);
   };
 
   const addColumn = () => {
@@ -247,9 +242,10 @@ const App: React.FC = () => {
       id: `custom-${Date.now()}`,
       title: newColumnTitle.trim(),
       colorClass: 'bg-slate-400',
-      sortBy: SortOption.CREATION
+      sortBy: SortOption.CREATION,
+      workspaceId: activeWorkspace?.id
     };
-    setColumns(prev => [...prev, newCol]);
+    firestoreAddColumn(newCol);
     setNewColumnTitle('');
     setIsAddingColumn(false);
   };
@@ -260,44 +256,43 @@ const App: React.FC = () => {
 
     const confirmMessage = "Are you sure you want to delete this column? All tasks inside will be permanently removed.";
     if (window.confirm(confirmMessage)) {
-      setColumns(prev => prev.filter(c => c.id !== id));
-      setTasks(prev => prev.filter(t => t.columnId !== id));
+      firestoreDeleteColumn(id);
+      // Delete associated tasks
+      tasks.filter(t => t.columnId === id).forEach(t => firestoreDeleteTask(t.id));
     }
   };
 
   const updateTask = (updatedTask: Task) => {
-    setTasks(prev => {
-      const oldTask = prev.find(t => t.id === updatedTask.id);
-      if (oldTask) {
-        // Detect Completion Transition
-        if (updatedTask.status === TaskStatus.COMPLETED && oldTask.status !== TaskStatus.COMPLETED) {
-          confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }, colors: ['#FF5F5F', '#FFD700', '#4ade80'] });
-          addNotification(
-            'Task Completed!',
-            `Great job! You've finished: ${updatedTask.title}`,
-            NotificationType.SUCCESS,
-            { label: 'Undo', onClick: 'undo-complete', payload: { taskId: updatedTask.id } }
-          );
-          updatedTask.completedDate = updatedTask.completedDate || new Date().toISOString();
-          updatedTask.previousColumnId = updatedTask.columnId !== ColumnId.COMPLETED ? updatedTask.columnId : oldTask.columnId;
-          updatedTask.columnId = ColumnId.COMPLETED;
-        }
-        // Detect Un-completion Transition (Undo)
-        else if (updatedTask.status !== TaskStatus.COMPLETED && oldTask.status === TaskStatus.COMPLETED) {
-          delete updatedTask.completedDate;
-          if (updatedTask.columnId === ColumnId.COMPLETED) {
-            updatedTask.columnId = updatedTask.previousColumnId || ColumnId.TODAY;
-            delete updatedTask.previousColumnId;
-          }
+    const oldTask = tasks.find(t => t.id === updatedTask.id);
+    if (oldTask) {
+      // Detect Completion Transition
+      if (updatedTask.status === TaskStatus.COMPLETED && oldTask.status !== TaskStatus.COMPLETED) {
+        confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }, colors: ['#FF5F5F', '#FFD700', '#4ade80'] });
+        addNotification(
+          'Task Completed!',
+          `Great job! You've finished: ${updatedTask.title}`,
+          NotificationType.SUCCESS,
+          { label: 'Undo', onClick: 'undo-complete', payload: { taskId: updatedTask.id } }
+        );
+        updatedTask.completedDate = updatedTask.completedDate || new Date().toISOString();
+        updatedTask.previousColumnId = updatedTask.columnId !== ColumnId.COMPLETED ? updatedTask.columnId : oldTask.columnId;
+        updatedTask.columnId = ColumnId.COMPLETED;
+      }
+      // Detect Un-completion Transition (Undo)
+      else if (updatedTask.status !== TaskStatus.COMPLETED && oldTask.status === TaskStatus.COMPLETED) {
+        delete updatedTask.completedDate;
+        if (updatedTask.columnId === ColumnId.COMPLETED) {
+          updatedTask.columnId = updatedTask.previousColumnId || ColumnId.TODAY;
+          delete updatedTask.previousColumnId;
         }
       }
-      return prev.map(t => t.id === updatedTask.id ? updatedTask : t);
-    });
+    }
+    firestoreUpdateTask(updatedTask);
   };
 
   const deleteTask = (taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
-    setTasks(prev => prev.filter(t => t.id !== taskId));
+    firestoreDeleteTask(taskId);
     setSelectedTask(null);
     if (task) {
       addNotification('Task Deleted', `"${task.title}" has been removed.`, NotificationType.WARNING);
@@ -382,6 +377,49 @@ const App: React.FC = () => {
     return Object.entries(groups).filter(([_, items]) => items.length > 0);
   }, [notifications]);
 
+  const handleAcceptInvite = async (invite: WorkspaceInvite) => {
+    if (!currentUser) return;
+    try {
+      // 1. Mark invite as accepted
+      const inviteRef = doc(db, 'invites', invite.id);
+      await updateDoc(inviteRef, { status: 'accepted' });
+
+      // 2. Add user to workspace
+      const workspaceRef = doc(db, 'workspaces', invite.workspaceId);
+      const wsDoc = await getDoc(workspaceRef);
+      if (wsDoc.exists()) {
+        const data = wsDoc.data();
+        const members = data.members || {};
+        const memberIds = data.memberIds || [];
+        members[currentUser.uid] = {
+          uid: currentUser.uid,
+          role: WorkspaceRole.MEMBER,
+          email: currentUser.email,
+          displayName: currentUser.displayName || 'User',
+          photoURL: currentUser.photoURL || null
+        };
+        if (!memberIds.includes(currentUser.uid)) {
+          memberIds.push(currentUser.uid);
+        }
+        await updateDoc(workspaceRef, { members, memberIds });
+      }
+
+      addNotification('Workspace Joined', `You have joined ${invite.workspaceName}`, NotificationType.SUCCESS);
+    } catch (error) {
+      console.error("Failed to accept invite", error);
+      addNotification('Error', 'Failed to join workspace', NotificationType.WARNING);
+    }
+  };
+
+  const handleDeclineInvite = async (inviteId: string) => {
+    try {
+      const inviteRef = doc(db, 'invites', inviteId);
+      await updateDoc(inviteRef, { status: 'declined' });
+    } catch (error) {
+      console.error("Failed to decline invite", error);
+    }
+  };
+
   const toggleStatus = (id: string) => {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
@@ -427,10 +465,13 @@ const App: React.FC = () => {
   }, [tasks, activeNav]);
 
   const handleSortChange = (colId: string, option: SortOption) => {
-    setColumns(prev => prev.map(c => c.id === colId ? { ...c, sortBy: option } : c));
+    const colToUpdate = columns.find(c => c.id === colId);
+    if (colToUpdate) {
+      firestoreUpdateColumn({ ...colToUpdate, sortBy: option });
+    }
   };
 
-  if (loading) {
+  if (loading || (isLoggedIn && workspaceDataLoading)) {
     return (
       <div className="flex h-screen items-center justify-center bg-white dark:bg-slate-950">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -477,6 +518,9 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2">
+            {!['profile', 'edit-profile', 'calendar', 'analytics'].includes(activeNav) && (
+              <WorkspaceSwitcher />
+            )}
             <div className="flex bg-slate-100 dark:bg-slate-800 p-0.5 sm:p-1 rounded-lg sm:rounded-xl border border-slate-200 dark:border-slate-700">
               <button onClick={() => setAdventureMode(false)} className={`p-1.5 rounded-md sm:rounded-lg flex items-center gap-1 text-[10px] sm:text-xs font-bold transition-all ${!adventureMode ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-slate-400'}`}>
                 <span className="material-symbols-outlined !text-[16px] sm:!text-[18px]">grid_view</span>
@@ -498,7 +542,7 @@ const App: React.FC = () => {
                 className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border border-slate-200 dark:border-slate-700 transition-all relative ${notificationsOpen ? 'bg-primary/10 border-primary text-primary' : 'text-slate-400 hover:text-primary'}`}
               >
                 <span className="material-symbols-outlined !text-[18px] sm:!text-[20px]">notifications</span>
-                {notifications.some(n => !n.isRead) && (
+                {(notifications.some(n => !n.isRead) || pendingInvites.length > 0) && (
                   <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse"></span>
                 )}
               </button>
@@ -517,10 +561,10 @@ const App: React.FC = () => {
                       <div>
                         <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">Notifications</h3>
                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
-                          {notifications.filter(n => !n.isRead).length} Unread
+                          {notifications.filter(n => !n.isRead).length + pendingInvites.length} Unread
                         </p>
                       </div>
-                      {notifications.length > 0 && (
+                      {(notifications.length > 0 || pendingInvites.length > 0) && (
                         <div className="flex gap-2">
                           <button onClick={markAllNotificationsAsRead} className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline px-2 py-1">Mark all read</button>
                           <button onClick={clearNotifications} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-500 transition-colors px-2 py-1">Clear</button>
@@ -529,6 +573,49 @@ const App: React.FC = () => {
                     </div>
 
                     <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+
+                      {/* Invites Section */}
+                      {pendingInvites.length > 0 && (
+                        <div className="border-b border-slate-100 dark:border-slate-800/50">
+                          <div className="px-4 py-2 bg-primary/5 dark:bg-primary/10 text-[8px] font-black text-primary uppercase tracking-widest border-b border-primary/10 dark:border-primary/20">
+                            Workspace Invitations
+                          </div>
+                          {pendingInvites.map((invite) => (
+                            <div key={invite.id} className="p-4 flex gap-3 bg-white dark:bg-slate-900 group border-b border-slate-50 dark:border-slate-800/50 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                              <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                                <span className="material-symbols-outlined !text-[18px]">group_add</span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2">
+                                  <h4 className="text-xs font-bold truncate text-slate-900 dark:text-white">Workspace Invite</h4>
+                                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter whitespace-nowrap">
+                                    New
+                                  </span>
+                                </div>
+                                <p className="text-[10px] mt-0.5 text-slate-600 dark:text-slate-300 leading-relaxed">
+                                  <span className="font-bold">{invite.inviterName}</span> invited you to join <span className="font-bold">{invite.workspaceName}</span>.
+                                </p>
+                                <div className="flex gap-2 mt-3">
+                                  <button
+                                    onClick={() => handleAcceptInvite(invite)}
+                                    className="flex-1 py-1.5 bg-primary text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-primary-dark transition-colors shadow-sm"
+                                  >
+                                    Accept
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeclineInvite(invite.id)}
+                                    className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                  >
+                                    Decline
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-2"></div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
                       {notifications.length > 0 ? (
                         <div className="divide-y divide-slate-50 dark:divide-slate-800/50">
                           {groupedNotifications.map(([groupName, items]) => (
@@ -583,12 +670,14 @@ const App: React.FC = () => {
                           ))}
                         </div>
                       ) : (
-                        <div className="p-8 text-center">
-                          <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                            <span className="material-symbols-outlined text-slate-300 dark:text-slate-600 !text-2xl">notifications_off</span>
+                        pendingInvites.length === 0 && (
+                          <div className="p-8 text-center">
+                            <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                              <span className="material-symbols-outlined text-slate-300 dark:text-slate-600 !text-2xl">notifications_off</span>
+                            </div>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No notifications yet</p>
                           </div>
-                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No notifications yet</p>
-                        </div>
+                        )
                       )}
                     </div>
                   </div>

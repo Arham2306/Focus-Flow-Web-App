@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { auth, googleProvider } from './firebase';
+import { auth, googleProvider, db } from './firebase';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import {
   signInWithPopup,
   signOut,
@@ -78,7 +79,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signInWithGoogleFn = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+
+      // Save or update user in Firestore
+      if (result.user) {
+        const userRef = doc(db, 'users', result.user.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+          await setDoc(userRef, {
+            uid: result.user.uid,
+            email: result.user.email,
+            displayName: result.user.displayName,
+            photoURL: result.user.photoURL,
+            createdAt: serverTimestamp(),
+            lastLoginAt: serverTimestamp()
+          });
+        } else {
+          await setDoc(userRef, {
+            lastLoginAt: serverTimestamp(),
+            displayName: result.user.displayName,
+            photoURL: result.user.photoURL
+          }, { merge: true });
+        }
+      }
     } catch (error) {
       console.error("Error signing in with Google", error);
       throw error;
@@ -89,6 +113,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName });
+
+      // Create user record in Firestore
+      await setDoc(doc(db, 'users', userCredential.user.uid), {
+        uid: userCredential.user.uid,
+        email: userCredential.user.email,
+        displayName: displayName,
+        photoURL: null,
+        createdAt: serverTimestamp(),
+        lastLoginAt: serverTimestamp()
+      });
+
       // Reload the user object to get the latest data from Firebase
       await userCredential.user.reload();
       // Force refresh user state from the actual auth instance to keep methods intact
@@ -101,7 +136,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signInWithEmailFn = async (email: string, password: string) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const result = await signInWithEmailAndPassword(auth, email, password);
+
+      // Update last login
+      if (result.user) {
+        await setDoc(doc(db, 'users', result.user.uid), {
+          lastLoginAt: serverTimestamp()
+        }, { merge: true });
+      }
     } catch (error) {
       console.error("Error signing in with email", error);
       throw error;
@@ -116,6 +158,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!currentUser) throw new Error("No user logged in");
     try {
       await updateProfile(currentUser, { displayName, photoURL });
+
+      // Update in Firestore
+      await setDoc(doc(db, 'users', currentUser.uid), {
+        displayName,
+        photoURL
+      }, { merge: true });
+
       // Reload the user object to get the latest data from Firebase
       await currentUser.reload();
       // Force refresh user state from the actual auth instance

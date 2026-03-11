@@ -74,8 +74,8 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, index, onToggleStatus, onTogg
                ${snapshot.isDragging ? 'shadow-lg ring-1 ring-slate-200 dark:ring-slate-700 z-[100]' : 'transition-colors'}`
           }
         >
-          <div className={`flex ${viewMode === 'board' ? 'items-start gap-3' : 'items-center gap-4'}`}>
-            <div className={`flex-shrink-0 ${viewMode === 'board' ? 'mt-0.5' : ''}`}>
+          <div className={`flex items-center ${viewMode === 'board' ? 'gap-3' : 'gap-4'}`}>
+            <div className="flex-shrink-0 flex items-center">
               <input
                 type="checkbox"
                 checked={isCompleted}

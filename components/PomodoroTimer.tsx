@@ -10,6 +10,11 @@ const PomodoroTimer = ({ onSessionComplete }: PomodoroTimerProps) => {
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [isActive, setIsActive] = useState(false);
   const [mode, setMode] = useState<'focus' | 'break'>('focus');
+  const [isHovered, setIsHovered] = useState(false); // Added isHovered state
+  const fillRef = useRef<HTMLDivElement>(null); // Added fillRef
+
+  const totalTime = mode === 'focus' ? 25 * 60 : 5 * 60;
+  const progress = ((totalTime - timeLeft) / totalTime) * 100;
 
   // Audio ref for notification sound (optional enhancement)
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -33,14 +38,31 @@ const PomodoroTimer = ({ onSessionComplete }: PomodoroTimerProps) => {
   }, [isActive, timeLeft, mode, onSessionComplete]);
 
   useEffect(() => {
-    const totalTime = mode === 'focus' ? 25 * 60 : 5 * 60;
-    const progress = ((totalTime - timeLeft) / totalTime) * 100;
-    gsap.to('#liquid-fill', {
-      height: `${progress}%`,
-      duration: 1.5,
-      ease: "sine.inOut"
-    });
-  }, [timeLeft, mode]);
+    // Liquid animation effect for fill height
+    if (fillRef.current) {
+      gsap.to(fillRef.current, {
+        height: `${progress}%`,
+        duration: 1.5,
+        ease: "sine.inOut"
+      });
+    }
+
+    // Liquid animation effect when playing
+    if (isActive && fillRef.current) {
+      gsap.to(fillRef.current, {
+        y: 'random(-5%, 5%)',
+        rotation: 'random(-3, 3)',
+        duration: 2,
+        repeat: -1,
+        yoyo: true,
+        ease: 'sine.inOut'
+      });
+    } else if (fillRef.current) {
+      gsap.killTweensOf(fillRef.current);
+      // Reset position if not active to prevent visual glitches from killed tweens
+      gsap.set(fillRef.current, { y: '0%', rotation: '0' });
+    }
+  }, [timeLeft, mode, isActive]); // Added isActive to dependencies
 
   const playNotificationSound = () => {
     // Simple beep using Web Audio API to avoid external assets
@@ -125,7 +147,12 @@ const PomodoroTimer = ({ onSessionComplete }: PomodoroTimerProps) => {
 
       <div className="text-center mb-8 relative">
         <div className="absolute inset-0 -m-4 overflow-hidden rounded-3xl opacity-30 dark:opacity-40 pointer-events-none">
-          <div id="liquid-fill" className="absolute bottom-0 left-0 right-0 bg-primary/60 transition-all duration-1000"></div>
+          <div
+            ref={fillRef}
+            className={`liquid-fill absolute bottom-0 left-0 right-0 w-full rounded-b-full transition-all duration-1000 ease-linear ${mode === 'focus' ? 'bg-primary' : 'bg-green-500'
+              }`}
+            style={{ height: `${progress}%`, opacity: 0.8 }}
+          />
         </div>
         <div className="relative z-10">
           <div className="text-6xl font-black text-slate-800 dark:text-white font-mono tracking-tighter tabular-nums">

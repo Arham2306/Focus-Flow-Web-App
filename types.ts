@@ -22,11 +22,46 @@ export enum SortOption {
   TITLE = 'TITLE'
 }
 
+export enum WorkspaceRole {
+  OWNER = 'owner',
+  ADMIN = 'admin',
+  MEMBER = 'member'
+}
+
+export interface WorkspaceMember {
+  uid: string;
+  role: WorkspaceRole;
+  email: string;
+  displayName: string;
+  photoURL: string | null;
+}
+
+export interface Workspace {
+  id: string;
+  name: string;
+  ownerId: string;
+  createdAt: string;
+  members: Record<string, WorkspaceMember>;
+  memberIds: string[];
+}
+
+export interface WorkspaceInvite {
+  id: string;
+  workspaceId: string;
+  workspaceName: string;
+  inviterName: string;
+  inviterId?: string;
+  inviteeEmail: string;
+  status: 'pending' | 'accepted' | 'declined';
+  createdAt: string;
+}
+
 export interface ColumnData {
   id: string;
   title: string;
   colorClass: string;
   sortBy?: SortOption;
+  workspaceId?: string;
 }
 
 export interface Subtask {
@@ -45,6 +80,7 @@ export interface Task {
   dueDate?: string;  // e.g., 'Due today'
   categoryIcon?: string; // Material symbol name
   hasNotification?: boolean;
+  workspaceId?: string; // Optional for backward compatibility before migration
   subtasks?: Subtask[];
   description?: string;
   priority?: TaskPriority;
