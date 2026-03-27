@@ -87,6 +87,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, darkMode, onToggleDa
 
   const faqs = [
     { q: "How does the AI task parsing work?", a: "FocusFlow uses the latest Gemini AI models to understand natural language inputs. Just type tasks like 'Buy milk tomorrow at 5pm' and the system extracts dates, priorities, and categories automatically." },
+    { q: "Can I collaborate with my team?", a: "Yes! FocusFlow now supports Team Workspaces. You can invite colleagues, assign roles, and manage tasks together with real-time syncing and notifications." },
     { q: "Is FocusFlow available on mobile?", a: "Yes! FocusFlow is built as a responsive web application that works flawlessly on iOS and Android devices, complete with mobile-optimized board and list views." },
     { q: "Does it support Pomodoro technique?", a: "Absolutely. We have a built-in focus timer that helps you cycle between deep work and short breaks to maintain peak cognitive performance." }
   ];
@@ -201,6 +202,26 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, darkMode, onToggleDa
             </div>
             <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-4">Progress Visualized</h3>
             <p className="text-base sm:text-lg text-slate-500 dark:text-slate-400 max-w-md">Track your completion rates and daily goals with beautiful, minimalist widgets that keep you motivated throughout the day.</p>
+          </div>
+          <div className="feature-card md:col-span-2 bg-slate-50 dark:bg-slate-900/50 rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-12 border border-slate-100 dark:border-slate-800 transition-all hover:border-green-500/20 group">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-green-500/10 rounded-2xl flex items-center justify-center text-green-500 mb-6 sm:mb-8 group-hover:scale-110 transition-transform">
+              <span className="material-symbols-outlined !text-2xl sm:!text-3xl font-black">groups</span>
+            </div>
+            <div className="flex items-center gap-3 mb-4">
+              <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">Team Workspaces</h3>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-green-500/10 text-green-600 dark:text-green-400">New</span>
+            </div>
+            <p className="text-base sm:text-lg text-slate-500 dark:text-slate-400 max-w-md">Collaborate effortlessly. Create shared workspaces, assign roles, and watch your team's productivity multiply in real-time.</p>
+          </div>
+          <div className="feature-card bg-indigo-500 rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-12 text-white flex flex-col justify-between shadow-2xl shadow-indigo-500/20 group hover:-translate-y-2 transition-all">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/20 rounded-2xl flex items-center justify-center text-white mb-6 sm:mb-8 group-hover:rotate-12 transition-transform"><span className="material-symbols-outlined !text-2xl sm:!text-3xl font-black">calendar_month</span></div>
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <h3 className="text-2xl sm:text-3xl font-black">Timeline View</h3>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/20 text-white">New</span>
+              </div>
+              <p className="text-indigo-50">Visualize your deadlines and plan your weeks with our powerful new calendar integration.</p>
+            </div>
           </div>
         </div>
       </section>
